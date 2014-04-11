@@ -1,0 +1,16 @@
+{
+    "contents" : "print(\"Jim's update\")\nsource('~/.active-rstudio-document')\nsource('~/GitHub/CAPSTONE/Hello world.R')\nsource('~/GitHub/CAPSTONE/DMC_KT.r')\ninstall.packages(\"beanplot\")\nlibrary(\"beanplot\", lib.loc=\"C:/Users/Jim Braun/Documents/R/win-library/3.0\")\nsource('~/GitHub/CAPSTONE/DMC_KT.r')\ninstall.packages(\"doBy\")\nlibrary(\"doBy\", lib.loc=\"C:/Users/Jim Braun/Documents/R/win-library/3.0\")\nsource('~/GitHub/CAPSTONE/DMC_KT.r')\n",
+    "created" : 1397193348118.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1496396990",
+    "id" : "760E9683",
+    "lastKnownWriteTime" : 1397191567,
+    "path" : "~/GitHub/CAPSTONE/.Rhistory",
+    "project_path" : ".Rhistory",
+    "properties" : {
+    },
+    "source_on_save" : false,
+    "type" : "r_history"
+}
