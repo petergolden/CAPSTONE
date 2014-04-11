@@ -2,4 +2,7 @@
 
 print("Hello, world!")
 
+
+print("this is really fun")
+
 print("Jim's update")
