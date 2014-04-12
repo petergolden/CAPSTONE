@@ -2,6 +2,8 @@
 library(lubridate)
 library(beanplot)
 library(doBy)
+library(tseries)
+library(forecast)
 
 # Read in data from Google Drive
 # Need to update path
@@ -52,3 +54,17 @@ legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "ora
 # Only doing ones with few possible values- salutation & state
 summaryBy(returnShipment ~ salutation, orders.train, FUN=c(length,mean))
 summaryBy(returnShipment ~ state, orders.train, FUN=c(length,mean))
+
+# Time-series data - taking the mean of return aggregated by order date
+# NOTE- it's been awhile since I've done a TS analysis, so really I was just looking at the plots & packages here. It will likely need a fair bit of revisions.
+avgReturnByDay <- summaryBy(returnShipment ~ orderDate, orders.train, FUN=mean)
+ts.orders <- ts(avgReturnByDay$returnShipment.mean, start=c(2012,4), frequency=365)
+plot(ts.orders)
+acf(ts.orders,20)
+pacf(ts.orders,20)
+lag.plot(ts.orders,9,do.lines=F)
+plot(diff(ts.orders))
+acf(diff(ts.orders),20)
+pacf(diff(ts.orders),20)
+adf.test(ts.orders)
+auto.arima(ts.orders)
