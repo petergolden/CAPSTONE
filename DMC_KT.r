@@ -2,11 +2,21 @@
 library(lubridate)
 library(beanplot)
 library(doBy)
+library(modeest)
+library(plyr)
+library(psych)
+
+# We can each add in our working directories here - just un# and # as you check code out and back in
+# setwd("C:/Users/Jim Braun/My Documents/Predict 498 Capstone/Data Mining Cup")
+#
+#
+#
 
 # Read in data from Google Drive
 # Need to update path
 orders.train <- read.table("C:/Users/Katie/Google Drive/Predict 498 Capstone/orders_train.txt", header = TRUE, sep = ";")
-# orders.train <- read.table("C:/Users/Jim Braun/My Documents/Predict 498 Capstone/Data Mining Cup/orders_train.txt", header = TRUE, sep = ";")
+# Jim's path
+orders.train <- read.table("C:/Users/Jim Braun/My Documents/Predict 498 Capstone/Data Mining Cup/orders_train.txt", header = TRUE, sep = ";")
 str(orders.train)
 
 # Update date fields to date type instead of factors
@@ -38,7 +48,7 @@ summary(orders.train[15:17])
 # Look at PDF of numeric variables given reponse
 # Note that we're just using a random sample due to processing time for graphics
 set.seed(498)
-sample_ind <- sample(seq_len(nrow(orders.train)), size = 100)
+sample_ind <- sample(seq_len(nrow(orders.train)), size = 1000)
 orders.sample <- orders.train [sample_ind, ]
 beanplot(customerAge ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Customer Age Distribution", ylab = "Age in Years", xaxt="n")
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
@@ -53,3 +63,51 @@ legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "ora
 # Only doing ones with few possible values- salutation & state
 summaryBy(returnShipment ~ salutation, orders.train, FUN=c(length,mean))
 summaryBy(returnShipment ~ state, orders.train, FUN=c(length,mean))
+
+# More EDA - a breakout of stats by returnShipment
+describeBy(orders.train, group=orders.train$returnShipment, mat=FALSE, type=3, digits=6)
+
+# quick X vs Y plot
+plot(orders.sample, cex=0.1)
+
+# calculate customer's preferred size
+# this was WAY more complicated than necessary...
+# mvf = most frequent value (a.k.a mode), requires Modeest package and library
+# Crap - have to make # obs match orders.sample
+# also, why does this create 3 variables instead of 1?
+custMode <- summaryBy(size ~ customerID, data=orders.sample, FUN = function (x) {c(m=mfv(x))})
+custMode
+
+custMode <- customer
+
+  # sorting orders by customerID to cbind customer Mode to right observation
+  r <- order(orders.sample$customerID)
+  r
+  sortID <- orders.sample[r,]
+  sortID
+cbind(sortID,custMode[,2])
+
+# Add column to denote whether the order size was not the customer's usual order (size mode)
+# had to use custMode column instead of one cbinded in. Not sure why, but this works 
+sortID$OrdNotMode <- ifelse((sortID$size != custMode[,2]),0,1)
+sortID$OrdNotMode
+
+     beanplot(sortID$OrdNotMode ~ returnShipment, sortID, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Unusual Size?", xaxt="n")
+     legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+
+# let's try this again...
+#nope
+mfv(orders.sample$size, group=orders.sample$customerID)
+mfv(orders.sample$size)
+
+#nope
+myfun<-function(x){mfv(x)}
+  summaryBy(orders.sample$size~orders.sample$customerID, data=orders.sample, FUN=myfun)
+
+# nope
+OB <- orderBy(~orders.sample$customerID+orders.sample$size, data=orders.sample)
+  OM <- function(d){c(NA,mfv(orders.sample$size)}
+  v<-lapplyBy(~orders.sample$customerID, data=orders.sample, OM)
+  orders.sample$OM <-unlist(v)
+
+
