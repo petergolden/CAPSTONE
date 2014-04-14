@@ -6,8 +6,9 @@ library(tseries)
 library(forecast)
 
 # Read in data from Google Drive
-# Need to update path
-orders.train <- read.table("C:/Users/Katie/Google Drive/Predict 498 Capstone/orders_train.txt", header = TRUE, sep = ";")
+# Added the 
+orders.train <- read.table("orders_train.txt", header = TRUE, sep = ";")
+#orders.train <- read.table("C:/Users/Katie/Google Drive/Predict 498 Capstone/orders_train.txt", header = TRUE, sep = ";")
 # orders.train <- read.table("C:/Users/Jim Braun/My Documents/Predict 498 Capstone/Data Mining Cup/orders_train.txt", header = TRUE, sep = ";")
 str(orders.train)
 
