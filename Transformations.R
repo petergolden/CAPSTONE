@@ -65,8 +65,48 @@ custMode <- merge(custMode,custMode5,by="customerID")
 # -------------------------------------------- #
 # Ideas for other variables
 # -------------------------------------------- #
+#
+# General customer behavior principles (hypotheses) #
+#
+  # people know their own size the best
+  # people know their own sizing system best
+  # some articles of clothing are more difficult to size than others (i.e. pants > t-shirts)
+  # people are generally motivated to save money (price sensitivity)
+    # Some customers are MORE price sensitive
+  # people generally want an item when it is fashionable (fashion sensitivity)
+    # Some customers are MORE fashion sensitive
+  # A purchase outside a customer’s profile is more likely to be returned
+#
+# Tasks #
+#
+# We may consider sorting these later by types of risks 
+    # e.g. customer risk, manufacturer risk, price risk, etc.
+#
 # breakout of sizes - done, but may revisit to look at tying to items?
 # mode for all size variables by customer - started, need to troubleshoot code
 # number of items per order
 # flag for if an item's price drops within x number of days of purchase
-# 
+#
+# flag for if customer is price sensitive 
+    # may yield other interactions, like increased propensity to return if price drop)
+# flag for if customer is fashion sensitive (may order at earlier dates)
+    # may yield other interactions, like increased propensity to return if product is older or cheaper
+#
+# colorDuplicate = same item ordered on orderDate but in different color as well
+# orderDuplicate = same exact item ordered >1x on orderDate
+# highRiskCustomer = has the customer returned greater than X% of items? 
+    # (something above the mean return rate)
+# holidayOrder = orderDate or deliveryDate is within 30 days prior or 5 days post Xmas
+# birthdayOrder = order is within 30 days prior or 5 days post customer’s birthday
+    # (may have to work a way to make it check bday each year)
+# highRiskManufacturer = does this manufacturer get a high % of returns 
+    # (may be cleaner than listing out or creating nodes on each manufacturerID)
+# highRiskColor = does this color get returned more frequently 
+    # (may be cleaner than listing out or creating nodes on each color)
+# highRiskItem = does this item get returned more frequently 
+    # (may be cleaner than listing out or creating nodes on each itemID)
+# Bought on sale?  Or bought at >X% discount?  (each item has a maximum price) 
+    # we could see if different price points for each item results in a 
+    # different return rate. This would be separate from the subsequent sale returns
+# UK or US Manufacturer (indicator variable - based on sizing conventions)
+
