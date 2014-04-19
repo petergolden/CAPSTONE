@@ -52,15 +52,31 @@ table(orders.train$sizeOther)
 mymode <- function(x){
   names(sort(-table(as.character(x))))[1]
 }
-custMode1 <- summaryBy(toupper(as.character(orders.train$size)) ~ customerID, orders.train, FUN=mymode)
-custMode2 <- summaryBy(orders.train$sizeLetter ~ customerID, orders.train, FUN=mymode)
-custMode3 <- summaryBy(orders.train$sizePant ~ customerID, orders.train, FUN=mymode)
-custMode4 <- summaryBy(orders.train$sizeChild ~ customerID, orders.train, FUN=mymode)
-custMode5 <- summaryBy(orders.train$sizeOther ~ customerID, orders.train, FUN=mymode)
-custMode <- merge(custMode1,custMode2,by="customerID")
-custMode <- merge(custMode,custMode3,by="customerID")
-custMode <- merge(custMode,custMode4,by="customerID")
-custMode <- merge(custMode,custMode5,by="customerID")
+custMode1 <- summaryBy(toupper(as.character(orders.train$size)) ~ orders.train$customerID, orders.train, FUN=mymode)
+custMode2 <- summaryBy(sizeLetter ~ customerID, orders.train[-which(is.na(orders.train$sizeLetter)),], FUN=mymode)
+custMode3 <- summaryBy(sizePant ~ customerID, orders.train[-which(is.na(orders.train$sizePant)),], FUN=mymode)
+custMode4 <- summaryBy(sizeChild ~ customerID, orders.train[-which(is.na(orders.train$sizeChild)),], FUN=mymode)
+custMode5 <- summaryBy(sizeOther ~ customerID, orders.train[-which(is.na(orders.train$sizeOther)),], FUN=mymode)
+custMode <- merge(custMode1,custMode2,by="customerID",all=T)
+custMode <- merge(custMode,custMode3,by="customerID",all=T)
+custMode <- merge(custMode,custMode4,by="customerID",all=T)
+custMode <- merge(custMode,custMode5,by="customerID",all=T)
+names(custMode) <- c("customerID","sizeMode","szLetterMode","szPantMode", "szChildMode", "szOtherMode")
+# Merge back into original file, then drop the unnecessary data frames to clean up the workspace
+orders.train <- merge(orders.train,custMode,by="customerID",all=T)
+remove(custMode,custMode1,custMode2,custMode3,custMode4,custMode5,size.table)
+
+# Add holiday/bday flags
+orders.train$holidayFlag <- ifelse(as.character(orders.train$orderDate,format="%m%d")>="1125",ifelse(as.character(orders.train$orderDate,format="%m%d")<="1230",1,0),0)
+orders.train$bdayFlag <- ifelse(as.character(orders.train$orderDate,format="%m%d")>=as.character(orders.train$dateOfBirth-30,format="%m%d"),ifelse(as.character(orders.train$orderDate,format="%m%d")<=as.character(orders.train$dateOfBirth+5,format="%m%d"),1,0),0)
+# Need to address cases at the beginning/end of the year
+
+# Add number of items per order
+#   Note- these take awhile to run! - need to troubleshoot
+numItems <- summaryBy(orders.train$orderItemID ~ orders.train$customerID + orders.train$orderDate, orders.train, FUN=count)
+orders.train <- merge(orders.train,numItems,by=c("customerID","orderDate"))
+dupItems <- summaryBy(orders.train$orderItemID ~ orders.train$customerID + orders.train$orderDate + orders.train$itemID, orders.train, FUN=count)
+orders.train <- merge(orders.train,dupItems,by=c("customerID","orderDate","itemID"))
 
 # -------------------------------------------- #
 # Ideas for other variables
@@ -83,8 +99,8 @@ custMode <- merge(custMode,custMode5,by="customerID")
     # e.g. customer risk, manufacturer risk, price risk, etc.
 #
 # breakout of sizes - done, but may revisit to look at tying to items?
-# mode for all size variables by customer - started, need to troubleshoot code
-# number of items per order
+# mode for all size variables by customer - done
+# number of items per order - need to troubleshoot- getting an error about differing number of rows
 # flag for if an item's price drops within x number of days of purchase
 #
 # flag for if customer is price sensitive 
@@ -96,8 +112,8 @@ custMode <- merge(custMode,custMode5,by="customerID")
 # orderDuplicate = same exact item ordered >1x on orderDate
 # highRiskCustomer = has the customer returned greater than X% of items? 
     # (something above the mean return rate)
-# holidayOrder = orderDate or deliveryDate is within 30 days prior or 5 days post Xmas
-# birthdayOrder = order is within 30 days prior or 5 days post customer’s birthday
+# holidayOrder = orderDate or deliveryDate is within 30 days prior or 5 days post Xmas- done
+# birthdayOrder = order is within 30 days prior or 5 days post customer’s birthday - done, but need to address cases of birthdays at beginning/end of year
     # (may have to work a way to make it check bday each year)
 # highRiskManufacturer = does this manufacturer get a high % of returns 
     # (may be cleaner than listing out or creating nodes on each manufacturerID)
