@@ -78,45 +78,64 @@ describeBy(orders.train, group=orders.train$returnShipment, mat=FALSE, type=3, d
 # quick X vs Y plot
 plot(orders.sample, cex=0.1)
 
+#--------------------------#
+# DEAL WITH MISSING VALUES #
+#--------------------------#
+
+# using mi package - get visual plot of missing obs
+pdf(file = "missing_obs_plots.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
+missing.pattern.plot(orders.train, gray.scale = TRUE)
+dev.off()										##\/close pdf\/##
+
+# check how many observations for each variable have missing values
+sum(is.na(orders.train$variable_names))
+
+#--------------------------#
+#      Imputation???       #
+#--------------------------#
+# need to decide on imputation method: mice?, 
+
+
+
 # calculate customer's preferred size
 # this was WAY more complicated than necessary...
 # mvf = most frequent value (a.k.a mode), requires Modeest package and library
 # Crap - have to make # obs match orders.sample
 # also, why does this create 3 variables instead of 1?
-custMode <- summaryBy(size ~ customerID, data=orders.sample, FUN = function (x) {c(m=mfv(x))})
-custMode
+# custMode <- summaryBy(size ~ customerID, data=orders.sample, FUN = function (x) {c(m=mfv(x))})
+# custMode
 
-custMode <- customer
+# custMode <- customer
 
   # sorting orders by customerID to cbind customer Mode to right observation
-  r <- order(orders.sample$customerID)
-  r
-  sortID <- orders.sample[r,]
-  sortID
-cbind(sortID,custMode[,2])
+#  r <- order(orders.sample$customerID)
+#  r
+#  sortID <- orders.sample[r,]
+#  sortID
+# cbind(sortID,custMode[,2])
 
 # Add column to denote whether the order size was not the customer's usual order (size mode)
 # had to use custMode column instead of one cbinded in. Not sure why, but this works 
-sortID$OrdNotMode <- ifelse((sortID$size != custMode[,2]),0,1)
-sortID$OrdNotMode
+# sortID$OrdNotMode <- ifelse((sortID$size != custMode[,2]),0,1)
+# sortID$OrdNotMode
 
-     beanplot(sortID$OrdNotMode ~ returnShipment, sortID, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Unusual Size?", xaxt="n")
-     legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+#     beanplot(sortID$OrdNotMode ~ returnShipment, sortID, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Unusual Size?", xaxt="n")
+#     legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 
 # let's try this again...
 #nope
-mfv(orders.sample$size, group=orders.sample$customerID)
-mfv(orders.sample$size)
+# mfv(orders.sample$size, group=orders.sample$customerID)
+# mfv(orders.sample$size)
 
 #nope
-myfun<-function(x){mfv(x)}
-  summaryBy(orders.sample$size~orders.sample$customerID, data=orders.sample, FUN=myfun)
+# myfun<-function(x){mfv(x)}
+#  summaryBy(orders.sample$size~orders.sample$customerID, data=orders.sample, FUN=myfun)
 
-# nope
-OB <- orderBy(~orders.sample$customerID+orders.sample$size, data=orders.sample)
-  OM <- function(d){c(NA,mfv(orders.sample$size)}
-  v<-lapplyBy(~orders.sample$customerID, data=orders.sample, OM)
-  orders.sample$OM <-unlist(v)
+#nope
+# OB <- orderBy(~orders.sample$customerID+orders.sample$size, data=orders.sample)
+#  OM <- function(d){c(NA,mfv(orders.sample$size)}
+#  v<-lapplyBy(~orders.sample$customerID, data=orders.sample, OM)
+#  orders.sample$OM <-unlist(v)
 
 # Try this one for modes- but do we need to get a numeric and s/m/l?
 # First convert from a factor to a string, standardizing case
@@ -140,3 +159,111 @@ acf(diff(ts.orders),20)
 pacf(diff(ts.orders),20)
 adf.test(ts.orders)
 auto.arima(ts.orders)
+
+#------------#
+# t-tests    #
+#------------#
+# We should add simple t-tests for all variables since we have a binary response variabe
+# independent 2-group t-test
+t.test(y~x) # where y is numeric and x is a binary factor
+
+
+# Plot Histograms for all variables by class
+# will need to sub in our data names #
+# I can't remember what MMST is for, but it was in a lot of my EDA code
+library(MMST)
+
+pdf(file = "hist_plots.pdf", width = 11, height = 8.5)
+nm <- names(wine)[1:13]
+for (i in seq(along = nm)) {
+  hist.plot <- ggplot(wine,aes(x = eval(parse(text = paste("wine$", nm[i], sep=""))),
+                               fill=factor(class))) + geom_histogram(alpha = 0.5)+xlab(nm[i])
+  print(hist.plot)
+}
+dev.off()
+
+#-------------------------#
+# Density Plots by class  #
+#-------------------------#
+# includes a loop with output routed to a pdf file
+# will need to sub in our data names #
+library(ggplot2)
+pdf(file = "my_plots.pdf", width = 11, height = 8.5)
+nm <- names(wine)[1:13]
+for (i in seq(along = nm)) {
+  this.plot <- ggplot(wine,aes(x = eval(parse(text = paste("wine$", nm[i], sep=""))),
+                               fill=factor(class))) + geom_density(alpha = 0.5)+xlab(nm[i])
+  print(this.plot)
+}
+dev.off()
+
+
+
+#------------------------------------#
+# To illustrate clustering by class  #
+# XY Plot by class                   #
+#------------------------------------#
+# lattice plots for key explanatory variables
+# Shows X&Y relationship by class - Can use for EDA or after algorithm returns top vars
+# But I think this may help identify interaction effects
+library(lattice) # required for the xyplot() function
+
+# this is just a template for integration #
+xyplot(Flav ~ Color | class, 
+       data = wine,        
+       layout = c(6, 1),
+       aspect=1,
+       strip=function(...) strip.default(..., style=1),
+       xlab = "Flavanoids", 
+       ylab = "Color Intensity")
+
+# Along same lines, we can look at scatterplots
+# The larger graphs with the overlay 
+# make the relationships a bit more visible
+library(car)
+# this is by class
+scatterplot(Flav ~ Color | class, data=wine, boxplots=FALSE, 
+            span=0.75, col=gray(c(0,0.5,0.7)),id.n=0)
+
+# this is just X vs. Y.  We can adjust for any specific variable comparisons we want to look at
+scatterplot(carat ~ price, data=diamonds, boxplots=FALSE, 
+            span=0.75,id.n=0)
+
+#------------------------------------------#
+# Conditioned XY Plots - to look in panels #
+#------------------------------------------#
+# this was a handy XYplot tool to look at the relationship between 2 variables, conditioned by other variables
+# this was borrowed from our diamonds data set program
+# showing the relationship between price and carat, while conditioning
+# on cut and channel provides a convenient view of the diamonds data
+# in addition, we jitter to show all points in the data frame
+xyplot(jitter(sqrtprice) ~ jitter(carat) | channel + cut, 
+       data = diamonds,
+       aspect = 1, 
+       layout = c(3, 2),
+       strip=function(...) strip.default(..., style=1),
+       xlab = "Size or Weight of Diamond (carats)", 
+       ylab = "Price")
+
+
+#------------------------------------------------#
+# to run some Weka algorithms - good for EDA too #
+#------------------------------------------------#
+library(RWeka)
+
+# May need to add pruning rules for j48 and JRip #
+
+# to run j48 in RWeka
+returns_j48 <- J48(class ~., data = orders.train)
+returns_j48
+summary(wine_j48)
+
+# to add a 10-folds cross-validation (does it help?)
+eval_j48 <- evaluate_Weka_classifier(returns_j48, numFolds = 10, complexity = FALSE, 
+                                     seed = 1, class = TRUE)
+eval_j48
+
+# To run JRip - Recall this shows rules - will not plot a tree
+returns_JRip <- JRip(class ~., data = orders.train)
+returns_JRip
+summary(returns_JRip)
