@@ -13,9 +13,12 @@ orders.train$dateOfBirth <- as.Date(orders.train$dateOfBirth, format = "%Y-%m-%d
 orders.train$creationDate <- as.Date(orders.train$creationDate, format = "%Y-%m-%d")
 
 # Add date diff variables
+# Time from when order was placed to delivery, in days
 orders.train$timeToDeliver <- as.numeric(difftime(orders.train$deliveryDate,orders.train$orderDate,unit="days"))
-orders.train$accountAge <- as.numeric(difftime(orders.train$orderDate,orders.train$creationDate,unit="weeks"))/52.25
-orders.train$customerAge <- as.numeric(difftime(orders.train$orderDate,orders.train$dateOfBirth,unit="weeks"))/52.25
+# Age of the account, in years but rounded to nearest tenth- seemed like a continuous variable was overkill here
+orders.train$accountAge <- round(as.numeric(difftime(orders.train$orderDate,orders.train$creationDate,unit="weeks"))/52.25,1)
+# want customer's age as an integer, similar to when you ask how old someone is
+orders.train$customerAge <- floor(as.numeric(difftime(orders.train$orderDate,orders.train$dateOfBirth,unit="weeks"))/52.25)
 # Check
 summary(orders.train[15:17])
 # timeToDeliver should never be negative, and age should never be negative
