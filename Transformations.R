@@ -131,6 +131,17 @@ names(riskyCust) <- c("customerID","numCustOrders","numCustReturns","custRiskFla
 orders.train <- merge(orders.train,riskyCust,by="customerID")
 remove(riskyManuf,riskyItems,riskyCust)
 
+# Check if items are always the same price (expect they're not, but wanted to verify before coding more)
+# Using a merge because if I try to do quantile and mean in 1 step, the labels aren't clear
+itemPricing <- merge(summaryBy(price ~ itemID,orders.train,FUN=quantile),
+    summaryBy(price ~ itemID,orders.train,FUN=mean),by="itemID")
+View(itemPricing) # confirmed, going to attach to the orders.train data frame so we can later flag 
+orders.train <- merge(orders.train, itemPricing, by="itemID")
+remove(itemPricing)
+# Look at mean of returnShipment for each price point
+# Currently saving this out as a separate table because I'm not entirely sure what to do with it
+returnsByPrice <- summaryBy(returnShipment ~ itemID + price, orders.train, FUN=c(length,mean))
+                            
 # -------------------------------------------- #
 # Ideas for other variables
 # -------------------------------------------- #
@@ -156,6 +167,8 @@ remove(riskyManuf,riskyItems,riskyCust)
 # number of items per order - done
 # flag for if an item's price drops within x number of days of purchase
 #
+
+#### I'm not entirely sure how to code for these two
 # flag for if customer is price sensitive 
     # may yield other interactions, like increased propensity to return if price drop)
 # flag for if customer is fashion sensitive (may order at earlier dates)
@@ -182,5 +195,6 @@ remove(riskyManuf,riskyItems,riskyCust)
 # Bought on sale?  Or bought at >X% discount?  (each item has a maximum price) 
     # we could see if different price points for each item results in a 
     # different return rate. This would be separate from the subsequent sale returns
+        # I mapped in max and min price for the item but haven't really done anything else with it... do we want to flag if it's the max price, min price, % discount...?
 # UK or US Manufacturer (indicator variable - based on sizing conventions)
 
