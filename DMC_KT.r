@@ -14,9 +14,9 @@ library(psych)
 
 # Read in data from Google Drive
 # Need to update path
-orders.train <- read.table("C:/Users/Katie/Google Drive/Predict 498 Capstone/orders_train.txt", header = TRUE, sep = ";")
+# orders.train <- read.table("C:/Users/Katie/Google Drive/Predict 498 Capstone/orders_train.txt", header = TRUE, sep = ";")
 # Jim's path
-orders.train <- read.table("C:/Users/Jim Braun/My Documents/Predict 498 Capstone/Data Mining Cup/orders_train.txt", header = TRUE, sep = ";")
+# orders.train <- read.table("C:/Users/Jim Braun/My Documents/Predict 498 Capstone/Data Mining Cup/orders_train.txt", header = TRUE, sep = ";")
 7library(tseries)7
 library(forecast)
 
@@ -45,6 +45,9 @@ orders.train$customerAge <- as.numeric(difftime(orders.train$orderDate,orders.tr
 summary(orders.train[15:17])
 
 # timeToDeliver should never be negative, and age should never be negative
+# call unreal values N/A as if a missing value
+# without access to management, we need to deal with these values another way
+# perhaps through imputation
 orders.train$timeToDeliver <- ifelse(orders.train$timeToDeliver<0,NA,orders.train$timeToDeliver)
 orders.train$customerAge <- ifelse(orders.train$customerAge<0,NA,orders.train$customerAge)
 # age should also probably not be > 100 - what should we use for the cut-off?
@@ -58,6 +61,8 @@ summary(orders.train[15:17])
 set.seed(498)
 sample_ind <- sample(seq_len(nrow(orders.train)), size = 1000)
 orders.sample <- orders.train [sample_ind, ]
+
+pdf(file = "bean_plots.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
 beanplot(customerAge ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Customer Age Distribution", ylab = "Age in Years", xaxt="n")
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(accountAge ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Account Age Distribution", ylab = "Age in Years", xaxt="n")
@@ -66,6 +71,7 @@ beanplot(timeToDeliver ~ returnShipment, orders.sample, side = "b", col = list("
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(price ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Price Distribution", xaxt="n")
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+dev.off()  	                                          ##\/close pdf\/##
 
 # Mean & count of response given nominal vars
 # Only doing ones with few possible values- salutation & state
@@ -83,24 +89,31 @@ plot(orders.sample, cex=0.1)
 #--------------------------#
 
 # using mi package - get visual plot of missing obs
-pdf(file = "missing_obs_plots.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
+library(mi)
+# Hmmm, too big to run.  Any ideas guys?
+pdf(file = "missing_obs_plots.pdf", width = 11, height = 8.5)   ##/\open pdf/\##
 missing.pattern.plot(orders.train, gray.scale = TRUE)
-dev.off()										##\/close pdf\/##
+dev.off()										                                    ##\/close pdf\/##
 
-# check how many observations for each variable have missing values
-sum(is.na(orders.train$variable_names))
+# One method to check how many observations for each variable have missing values
+sum(is.na(orders.train$orderItemID))
+sum(is.na(orders.train$orderDate))
+sum(is.na(orders.train$deliveryDate))
+# No need to do rest, since this is also covered by summary command
+
 
 #--------------------------#
 #      Imputation???       #
 #--------------------------#
 # need to decide on imputation method: mice?, 
+library(mice)
 
 
-
+#---for future DELETION-------#
 # calculate customer's preferred size
 # this was WAY more complicated than necessary...
 # mvf = most frequent value (a.k.a mode), requires Modeest package and library
-# Crap - have to make # obs match orders.sample
+# have to make # obs match orders.sample
 # also, why does this create 3 variables instead of 1?
 # custMode <- summaryBy(size ~ customerID, data=orders.sample, FUN = function (x) {c(m=mfv(x))})
 # custMode
@@ -137,6 +150,10 @@ sum(is.na(orders.train$variable_names))
 #  v<-lapplyBy(~orders.sample$customerID, data=orders.sample, OM)
 #  orders.sample$OM <-unlist(v)
 
+#-----END DELETION-----#
+
+
+
 # Try this one for modes- but do we need to get a numeric and s/m/l?
 # First convert from a factor to a string, standardizing case
 orders.train$revSize <- toupper(as.character(orders.train$size))
@@ -160,10 +177,30 @@ pacf(diff(ts.orders),20)
 adf.test(ts.orders)
 auto.arima(ts.orders)
 
+
+#list variables for cut and paste within code
+# orderItemID   : int  1 2 3 4 5 6 7 8 9 10 ...
+# orderDate     : Factor w/ 365 levels "2012-04-01","2012-04-02",..: 1 1 1 2 2 2 2 2 2 2 ...
+# deliveryDate  : Factor w/ 328 levels "?","1990-12-31",..: 3 3 3 1 2 2 2 3 3 3 ...
+# itemID        : int  186 71 71 22 151 598 15 32 32 57 ...
+# size          : Factor w/ 122 levels "1","10","10+",..: 110 103 103 110 60 119 60 119 119 119 ...
+# color         : Factor w/ 88 levels "?","almond","amethyst",..: 44 70 37 51 19 24 19 24 80 51 ...
+# manufacturerID: int  25 21 21 14 53 87 1 3 3 3 ...
+# price         : num  69.9 70 70 39.9 29.9 ...
+# customerID    : int  794 794 794 808 825 825 825 850 850 850 ...
+# salutation    : Factor w/ 5 levels "Company","Family",..: 4 4 4 4 4 4 4 4 4 4 ...
+# dateOfBirth   : Factor w/ 14309 levels "?","1655-04-19",..: 7074 7074 7074 5195 6896 6896 6896 1446 1446 1446 ...
+# state         : Factor w/ 16 levels "Baden-Wuerttemberg",..: 1 1 1 13 11 11 11 10 10 10 ...
+# creationDate  : Factor w/ 775 levels "2011-02-16","2011-02-17",..: 69 69 69 323 1 1 1 1 1 1 ...
+# returnShipment: int  0 1 1 0 0 0 0 1 1 1 ...
+# timeToDeliver 
+# accountAge
+# customerAge
+
 #------------#
 # t-tests    #
 #------------#
-# We should add simple t-tests for all variables since we have a binary response variabe
+# We should add simple t-tests for any binary variables - can use for high risk indicators  
 # independent 2-group t-test
 t.test(y~x) # where y is numeric and x is a binary factor
 

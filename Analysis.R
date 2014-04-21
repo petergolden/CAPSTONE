@@ -79,7 +79,7 @@ auto.arima(ts.orders)
 #------------#
 # t-tests    #
 #------------#
-# We should add simple t-tests for all variables since we have a binary response variabe
+# We should add simple t-tests for binary variables since we have a binary response variabe
 # independent 2-group t-test
 t.test(y~x) # where y is numeric and x is a binary factor
 
