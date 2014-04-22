@@ -144,7 +144,14 @@ remove(itemPricing)
 # Look at mean of returnShipment for each price point
 # Currently saving this out as a separate table because I'm not entirely sure what to do with it
 returnsByPrice <- summaryBy(returnShipment ~ itemID + price, orders.train, FUN=c(length,mean))
-                            
+
+# Create OrderID variable
+orders.table <- summaryBy(returnShipment ~ orderDate + customerID, orders.train, FUN=mean)
+orders.table$orderID <- 1:nrow(orders.table)
+orders.table <- orders.table[,-3]
+orders.train <- merge(orders.train,orders.table,by=c("customerID","orderDate"))
+remove(orders.table)
+
 # -------------------------------------------- #
 # Ideas for other variables
 # -------------------------------------------- #
