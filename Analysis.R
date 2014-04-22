@@ -18,6 +18,17 @@ library(lattice) # required for the xyplot() function
 library(car)
 library(RWeka)
 
+# Train/Test split (doing 70/30, based on number of orders)
+# Just writing out syntax here- probably makes more sense to put it after the EDA, though.
+# There's probably a more elegant way to do this but I just went with syntax I already know. Feel free to update.
+smp_size <- floor(0.7 * max(orders.train$orderID))
+set.seed(498)
+train_ind <- sample(seq_len(max(orders.train$orderID)), size = smp_size)
+orders.train$trainTest <- train_ind[orders.train$orderID]
+train <- orders.train[which(orders.train$trainTest>0), ]
+test <- orders.train[-which(orders.train$trainTest>0), ]
+remove(smp_size,train_ind)
+
 # Look at PDF of numeric variables given reponse
 # Note that we're just using a random sample due to processing time for graphics
 set.seed(498)
