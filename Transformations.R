@@ -70,6 +70,7 @@ orders.train <- merge(orders.train,custMode,by="customerID",all=T)
 remove(custMode,custMode1,custMode2,custMode3,custMode4,custMode5,size.table)
 
 # Add holiday/bday flags
+# NOTE: ALL OBS ARE MARKED '1' FOR BDAY
 orders.train$holidayFlag <- ifelse(as.character(orders.train$orderDate,format="%m%d")>="1125" &
   as.character(orders.train$orderDate,format="%m%d")<="1230",1,0)
 orders.train$bdayFlag <- ifelse(as.character(orders.train$orderDate,format="%m%d")>=as.character(orders.train$dateOfBirth-30,format="%m%d") & 
@@ -151,6 +152,9 @@ orders.table$orderID <- 1:nrow(orders.table)
 orders.table <- orders.table[,-3]
 orders.train <- merge(orders.train,orders.table,by=c("customerID","orderDate"))
 remove(orders.table)
+
+
+str(orders.train)
 
 # -------------------------------------------- #
 # Ideas for other variables
