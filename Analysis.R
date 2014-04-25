@@ -17,6 +17,7 @@ library(ggplot2)
 library(lattice) # required for the xyplot() function
 library(car)
 library(RWeka)
+library(corrgram)
 
 # Train/Test split (doing 70/30, based on number of orders)
 # Just writing out syntax here- probably makes more sense to put it after the EDA, though.
@@ -32,7 +33,7 @@ remove(smp_size,train_ind)
 # Look at PDF of numeric variables given reponse
 # Note that we're just using a random sample due to processing time for graphics
 set.seed(498)
-sample_ind <- sample(seq_len(nrow(orders.train)), size = 1000)
+sample_ind <- sample(seq_len(nrow(orders.train)), size = 100)
 orders.sample <- orders.train [sample_ind, ]
 beanplot(customerAge ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Customer Age Distribution", ylab = "Age in Years", xaxt="n")
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
@@ -151,6 +152,8 @@ scatterplot(Flav ~ Color | class, data=wine, boxplots=FALSE,
 scatterplot(carat ~ price, data=diamonds, boxplots=FALSE, 
             span=0.75,id.n=0)
 
+# Numeric fields for sample scatterplot
+orders.numeric <- orders.sample[c("price","timeToDeliver","accountAge","customerAge","numItemOrders","numItemID")]
 # (KT) I've been using this version for my scatterplot matrix
 panel.cor <-function(x,y,digits=3,prefix="",cex.cor,...){ # gives you the ability to show correlation coefficients in the matrix
   usr <- par("usr")
@@ -176,9 +179,11 @@ panel.density <-function(x,...){ # allows you to show density on the diagonal
   box(col = "lightgray")
 } # Modified from corrgram package version of panel.density
 
-pairs(orders.sample,pch=".",diag.panel=panel.density,lower.panel=panel.smooth,upper.panel=panel.cor,main="Scatterplot Matrix") 
+pairs(Orders.numeric,pch=".",diag.panel=panel.density,lower.panel=panel.smooth,upper.panel=panel.cor,main="Scatterplot Matrix") 
 # pch = "." uses dots instead of circles for points. Leave out if circles are what you want.
 
+# (KT) Alternate using corrgram package
+corrgram(orders.numeric,main="Correlations",lower.panel=panel.ellipse,diag.panel=panel.density)
 
 #------------------------------------------#
 # Conditioned XY Plots - to look in panels #

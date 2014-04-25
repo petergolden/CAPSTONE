@@ -141,6 +141,7 @@ itemPricing <- merge(summaryBy(price ~ itemID,orders.train,FUN=quantile),
     summaryBy(price ~ itemID,orders.train,FUN=mean),by="itemID")
 View(itemPricing) # confirmed, going to attach to the orders.train data frame so we can later flag 
 orders.train <- merge(orders.train, itemPricing, by="itemID")
+orders.train$difFromMeanPrice = orders.train$price - orders.train$price.mean
 remove(itemPricing)
 # Look at mean of returnShipment for each price point
 # Currently saving this out as a separate table because I'm not entirely sure what to do with it
