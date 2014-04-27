@@ -1,6 +1,7 @@
 # Variable Transformations
 # Libraries
 library(doBy)
+library(ggplot2)
 
 # Read in data from GitHub
 orders.train <- read.table("orders_train.txt", header = TRUE, sep = ";")
@@ -28,6 +29,16 @@ table(orders.train$color)
 table(orders.train$salutation)
 table(orders.train$state)
 table(orders.train$returnShipment)
+# Bar plots
+# Need to update options to fit labels 
+par(las=2) # make label text perpendicular to axis
+options(scipen=50,digits=5) # change default setting for when R converts to using sci notation
+barplot(table(orders.train$size), main="Size Distribution", horiz=TRUE, cex.names=0.5)
+par(mar=c(4,6,4,2)) # increase y-axis margin (order is bottom,left,top,right)
+barplot(table(orders.train$color), main="Color Distribution", horiz=TRUE, cex.names=0.6)
+barplot(table(orders.train$salutation), main="Salutation Distribution", horiz=TRUE)
+par(mar=c(4,10,4,2)) # increase y-axis margin (order is bottom,left,top,right)
+barplot(table(orders.train$state), main="State Distribution", horiz=TRUE, cex.names=0.6)
 
 # Check that orderItemID is a uniqueID (may need to map to it later)
   # Since it looks like it's just the record number, it should match the row number
@@ -96,6 +107,12 @@ table(orders.train$sizeLetter)
 table(orders.train$sizePant)
 table(orders.train$sizeChild)
 table(orders.train$sizeOther)
+
+# Densities for all numeric (non-ID)
+ggplot(orders.train,aes(x=price)) + geom_density(fill="grey") + ggtitle("Price Distribution")
+ggplot(orders.train,aes(x=timeToDeliver)) + geom_density(fill="grey") + ggtitle("Delivery Time Distribution")
+ggplot(orders.train,aes(x=customerAge)) + geom_density(fill="grey") + ggtitle("Age Distribution")
+ggplot(orders.train,aes(x=accountAge)) + geom_density(fill="grey") + ggtitle("Account Age Distribution")
 
 # Add mode function - note that this only gives one mode if there is more than one
 mymode <- function(x){
