@@ -12,6 +12,47 @@ orders.train$deliveryDate <- as.Date(orders.train$deliveryDate, format = "%Y-%m-
 orders.train$dateOfBirth <- as.Date(orders.train$dateOfBirth, format = "%Y-%m-%d")
 orders.train$creationDate <- as.Date(orders.train$creationDate, format = "%Y-%m-%d")
 
+# Summary data for the QA report
+summary(orders.train$orderDate)
+summary(orders.train$deliveryDate)
+summary(orders.train$creationDate)
+summary(orders.train$dateOfBirth)
+
+# Export top and bottom 10 cases for QA report
+print(orders.train[1:10,])
+print(orders.train[481083:481092,])
+
+# Export frequency tables for categorical variables (not IDs)
+table(orders.train$size)
+table(orders.train$color)
+table(orders.train$salutation)
+table(orders.train$state)
+table(orders.train$returnShipment)
+
+# Check that orderItemID is a uniqueID (may need to map to it later)
+  # Since it looks like it's just the record number, it should match the row number
+  # Printing cases where it's not- this should return 0 records
+orders.train[-which(orders.train$orderItemID!=orders.train$row.names),]
+# Check that each itemID is associated with just one manufacturerID
+  # Create a table by item ID with the min & max of manufacturer ID
+item.check <- summaryBy(manufacturerID ~ itemID, orders.train, FUN=c(min,max))
+  # then check that there are no cases where the min and max are different
+item.check[-which(item.check$manufacturerID.min==item.check$manufacturerID.max),]
+  # get full details on these itemIDs
+View(orders.train[which(orders.train$itemID==c(1627,1682,1696,2252)),])
+  #### How do we want to handle these??
+remove(item.check)
+
+# Customer checks- salutation, state, bday, and creation date should match across records
+# Steps similar to item check above
+cust.check <- summaryBy(salutation + state + dateOfBirth + creationDate ~ customerID, orders.train, FUN=c(min,max))
+cust.check[-which(cust.check$salutation.min==cust.check$salutation.max),] # 0 records
+cust.check[-which(cust.check$state.min==cust.check$state.max),] # 0 records
+cust.check[-which(cust.check$dateOfBirth.min==cust.check$dateOfBirth.max),] # large number of records, viewing the table instead
+View(cust.check[-which(cust.check$dateOfBirth.min==cust.check$dateOfBirth.max),]) # looks like they're all NAs, which are ok
+cust.check[-which(cust.check$creationDate.min==cust.check$creationDate.max),] # 0 records
+remove(cust.check)
+
 # Add date diff variables
 # Time from when order was placed to delivery, in days
 orders.train$timeToDeliver <- as.numeric(difftime(orders.train$deliveryDate,orders.train$orderDate,unit="days"))
@@ -28,6 +69,11 @@ orders.train$customerAge <- ifelse(orders.train$customerAge<0,NA,orders.train$cu
 orders.train$customerAge <- ifelse(orders.train$customerAge>100,NA,orders.train$customerAge)
 # Recheck
 summary(orders.train[15:17])
+
+# Recode ? to NA for color
+orders.train$color <- ifelse(orders.train$color=="?",NA,orders.train$color)
+# Recode "not reported" to NA for salutation
+orders.train$salutation <- ifelse(orders.train$salutation=="not reported",NA,orders.train$salutation)
 
 # Sizing recodes - creating a table with frequencies to work from and going to remove sizes as I recode them
 # There may be some errors here- for example, Euro children's sizes start at 50, but some conversions go up to size 52 for men's suits, etc
