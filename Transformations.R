@@ -52,13 +52,16 @@ item.check[-which(item.check$manufacturerID.min==item.check$manufacturerID.max),
   # get full details on these itemIDs
 View(orders.train[which(orders.train$itemID==c(1627,1682,1696,2252)),])
   #### How do we want to handle these??
-  # This affects 3007 observations, or 0.6%
-  # It's not undeard of for two manufacturers to make the same item, 
+  # This affects 145 observations
+  # It's not undheard of for two manufacturers to make the same item, 
   # but there are clearly errors as the items from the different manufacturers
   # are sometime not even in the same size range
   # There are not many and return frequency is not far off
   # we could double check with a t-test or a binomial test on missing obs and compare to the confidence interval
-  # I concur to remove these obs.  JB.  
+binom.test(73, 145, p = .4824, alternative = c("two.sided"), conf.level = 0.95)
+  # x= number of 'successes',n=number of trials, p = hypothesized prob of success, or that of return rate of our population
+  # http://stat.ethz.ch/R-manual/R-patched/library/stats/html/binom.test.html
+  # Since true prob is in confidence interval, there is no bias and I concur to remove these obs.  JB.  
 remove(item.check)
 
 # Customer checks- salutation, state, bday, and creation date should match across records
@@ -95,7 +98,7 @@ orders.train$salutation <- ifelse(orders.train$salutation=="not reported",NA,ord
 
 # Sizing recodes - creating a table with frequencies to work from and going to remove sizes as I recode them
 # There may be some errors here- for example, Euro children's sizes start at 50, but some conversions go up to size 52 for men's suits, etc
-# not sure how many items this affects, but we could check the range of values for those items to see which class they belong to?
+##### not sure how many items this affects, but we could check the range of values for those items to see which class they belong to?
 size.table <- summaryBy(size ~ size,orders.train,FUN=length)
 View(size.table)
 # Ones that seem like US sizes
@@ -115,6 +118,19 @@ table(orders.train$sizeLetter)
 table(orders.train$sizePant)
 table(orders.train$sizeChild)
 table(orders.train$sizeOther)
+
+##### Euro Women's Dress sizes seem to range between 28 and 54 - maybe we leave these alone and in 'other'
+#  https://www.google.com/search?q=dress+sizes&tbm=isch&tbo=u&source=univ&sa=X&ei=giRfU_LmMKa6yQGu4IHwDw&ved=0CCgQsAQ&biw=1080&bih=484#q=european+dress+sizes&tbm=isch&facrc=_&imgrc=VvapZ5APyTOnrM%253A%3B-WKQ1Hty0kzBiM%3Bhttp%253A%252F%252Fwww.europeword.com%252Fblog%252Fwp-content%252Fuploads%252Feuropean-dress-sizes.jpg%3Bhttp%253A%252F%252Fwww.europeword.com%252Fblog%252Feurope%252Feuropean-dress-sizes%252F%3B756%3B479
+#  Tried to look up men's shirt sizes too, but there is a lot of overlap in the systems here
+#  Last idea is that maybe sizes < 20 are US type sizes - either for shoes or women's dresses 
+#  both are difficult to size without trying on, # so maybe we try that?
+#####
+#### DO WE NEED TO ADD PLUS SIZES HERE??? ######
+orders.train$sizeShoeDress <- ifelse(as.numeric(as.character(orders.train$size))>=1 & as.numeric(as.character(orders.train$size))<=20,as.numeric(as.character(orders.train$size)),NA)
+size.table <- size.table[-which(as.numeric(as.character(size.table$size))>=1 & as.numeric(as.character(size.table$size))<=20),]
+table(orders.train$sizeShoeDress)
+
+####### END SIZING #########
 
 # Densities for all numeric (non-ID)
 ggplot(orders.train,aes(x=price)) + geom_density(fill="grey") + ggtitle("Price Distribution")
@@ -137,8 +153,8 @@ custMode <- merge(custMode,custMode4,by="customerID",all=T)
 custMode <- merge(custMode,custMode5,by="customerID",all=T)
 names(custMode) <- c("customerID","sizeMode","szLetterMode","szPantMode", "szChildMode", "szOtherMode")
 # Merge back into original file, then drop the unnecessary data frames to clean up the workspace
-# Should we be looking at mode for each clothing type, and just noting if the next order does not belong to that mode for that type,
-# or is this just getting too complicated?
+##### Should we be looking at mode for each clothing type, and just noting if the next order does not belong to that mode for that type,
+##### or is this just getting too complicated?
 orders.train <- merge(orders.train,custMode,by="customerID",all=T)
 remove(custMode,custMode1,custMode2,custMode3,custMode4,custMode5,size.table)
 
