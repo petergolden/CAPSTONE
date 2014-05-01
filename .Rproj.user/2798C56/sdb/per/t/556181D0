@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1398919952502.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "556181D0",
+    "lastKnownWriteTime" : 7741240722073845761,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "orders.train[which(orders.train$bdayFlag == 1 & (as.character(orders.train$orderDate, ",
+        "contentUrl" : "content?title=orders.train%5Bwhich(orders.train%24bdayFlag+%3D%3D+1+%26+(as.character(orders.train%24orderDate%2C+&file=d7f9d8f96f7742ea8f14217f0d968e03.htm",
+        "displayedObservations" : 1000,
+        "displayedVariables" : 31,
+        "totalObservations" : 1419,
+        "variables" : 30
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

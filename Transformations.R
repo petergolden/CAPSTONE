@@ -7,11 +7,20 @@ library(ggplot2)
 orders.train <- read.table("orders_train.txt", header = TRUE, sep = ";")
 str(orders.train)
 
+#-----------------------#
+# Correct Data Formats  #
+#-----------------------#
+
 # Update date fields to date type instead of factors
 orders.train$orderDate <- as.Date(orders.train$orderDate, format = "%Y-%m-%d")
 orders.train$deliveryDate <- as.Date(orders.train$deliveryDate, format = "%Y-%m-%d")
 orders.train$dateOfBirth <- as.Date(orders.train$dateOfBirth, format = "%Y-%m-%d")
 orders.train$creationDate <- as.Date(orders.train$creationDate, format = "%Y-%m-%d")
+
+
+#--------------------#
+# QA Report Output   #
+#--------------------#
 
 # Summary data for the QA report
 summary(orders.train$orderDate)
@@ -39,6 +48,14 @@ barplot(table(orders.train$color), main="Color Distribution", horiz=TRUE, cex.na
 barplot(table(orders.train$salutation), main="Salutation Distribution", horiz=TRUE)
 par(mar=c(4,10,4,2)) # increase y-axis margin (order is bottom,left,top,right)
 barplot(table(orders.train$state), main="State Distribution", horiz=TRUE, cex.names=0.6)
+
+#-----------------------#
+# End QA Report output  #
+#-----------------------#
+
+#---------------#
+# Data Checks   #
+#---------------#
 
 # Check that orderItemID is a uniqueID (may need to map to it later)
   # Since it looks like it's just the record number, it should match the row number
@@ -74,6 +91,11 @@ View(cust.check[-which(cust.check$dateOfBirth.min==cust.check$dateOfBirth.max),]
 cust.check[-which(cust.check$creationDate.min==cust.check$creationDate.max),] # 0 records
 remove(cust.check)
 
+#--------------------------#
+# Variable Transformations #
+#     And Data Cleaning    #
+#--------------------------#
+
 # Add date diff variables
 # Time from when order was placed to delivery, in days
 orders.train$timeToDeliver <- as.numeric(difftime(orders.train$deliveryDate,orders.train$orderDate,unit="days"))
@@ -101,34 +123,71 @@ orders.train$salutation <- ifelse(orders.train$salutation=="not reported",NA,ord
 ##### not sure how many items this affects, but we could check the range of values for those items to see which class they belong to?
 size.table <- summaryBy(size ~ size,orders.train,FUN=length)
 View(size.table)
+
 # Ones that seem like US sizes
 orders.train$sizeLetter <- ifelse(as.character(orders.train$size)>"a",toupper(as.character(orders.train$size)),NA)
 size.table <- size.table[-which(as.character(size.table$size)>"a"),]
 orders.train$sizePant <- ifelse(as.numeric(as.character(orders.train$size))>2900,as.numeric(as.character(orders.train$size)),NA)
 size.table <- size.table[-which(as.numeric(as.character(size.table$size))>2900),]
+
 # Euro children's sizes go from 50-188
 # http://www.ebay.com/gds/Guide-to-Understanding-European-Clothing-Sizes-/10000000007740616/g.html
 orders.train$sizeChild <- ifelse(as.numeric(as.character(orders.train$size))>=50 & as.numeric(as.character(orders.train$size))<=188,as.numeric(as.character(orders.train$size)),NA)
 size.table <- size.table[-which(as.numeric(as.character(size.table$size))>=50 & as.numeric(as.character(size.table$size))<=188),]
+
+#  Maybe sizes < 20 are US type sizes - either for shoes or women's dresses 
+#  both are difficult to size without trying on
+orders.train$sizeShoeDress <- ifelse(as.numeric(as.character(orders.train$size))>=1 & as.numeric(as.character(orders.train$size))<=20,as.numeric(as.character(orders.train$size)),NA)
+size.table <- size.table[-which(as.numeric(as.character(size.table$size))>=1 & as.numeric(as.character(size.table$size))<=20),]
+
+#-------------------------------#
+# CAN'T GET CODE TO WORK HERE#
+# Plus sizes different in Shoe / Dress size range?
+#orders.train$sizePlus <- ifelse(as.character(orders.train$size)=='2+' & as.character(orders.train$size)=='3+' & as.character(orders.train$size)=='4+' & as.character(orders.train$size)=='5+' 
+#                                & as.character(orders.train$size)=='6+' & as.character(orders.train$size)=='7+' & as.character(orders.train$size)=='8+' & as.character(orders.train$size)=='9+' 
+#                                & as.character(orders.train$size)=='10+' & as.character(orders.train$size)=='11+' & as.character(orders.train$size)=='12+' & as.character(orders.train$size)=='13+',
+#                                as.character(orders.train$size), NA)
+#size.table <- size.table[-which(as.character(orders.train$size)=='2+' & as.character(orders.train$size)=='3+' & as.character(orders.train$size)=='4+' & as.character(orders.train$size)=='5+' 
+#                                & as.character(orders.train$size)=='6+' & as.character(orders.train$size)=='7+' & as.character(orders.train$size)=='8+' & as.character(orders.train$size)=='9+' 
+#                                & as.character(orders.train$size)=='10+' & as.character(orders.train$size)=='11+' & as.character(orders.train$size)=='12+' & as.character(orders.train$size)=='13+'),]
+
+
+#orders.train$sizePlus <- ifelse(as.numeric(as.character(orders.train$size))=='2+' & as.numeric(as.character(orders.train$size))=='3+' & as.numeric(as.character(orders.train$size))=='4+' & as.numeric(as.character(orders.train$size))=='5+' 
+#                                & as.numeric(as.character(orders.train$size))=='6+' & as.numeric(as.character(orders.train$size))=='7+' & as.numeric(as.character(orders.train$size))=='8+' & as.numeric(as.character(orders.train$size))=='9+' 
+#                                & as.numeric(as.character(orders.train$size))=='10+' & as.numeric(as.character(orders.train$size))=='11+' & as.numeric(as.character(orders.train$size))=='12+' & as.numeric(as.character(orders.train$size))=='13+',
+#                                as.numeric(as.character(orders.train$size)), NA)
+#size.table <- size.table[-which(as.character(orders.train$size)=='2+' & as.character(orders.train$size)=='3+' & as.character(orders.train$size)=='4+' & as.character(orders.train$size)=='5+' 
+#                                & as.character(orders.train$size)=='6+' & as.character(orders.train$size)=='7+' & as.character(orders.train$size)=='8+' & as.character(orders.train$size)=='9+' 
+#                                & as.character(orders.train$size)=='10+' & as.character(orders.train$size)=='11+' & as.character(orders.train$size)=='12+' & as.character(orders.train$size)=='13+'),]
+#-------------------------------#
+
 # Remaining
-orders.train$sizeOther <- ifelse(is.na(orders.train$sizeLetter) & is.na(orders.train$sizePant) & is.na(orders.train$sizeChild),as.character(orders.train$size),NA)
+orders.train$sizeOther <- ifelse(is.na(orders.train$sizeLetter) & is.na(orders.train$sizePant) & is.na(orders.train$sizeChild) & is.na(orders.train$sizeShoeDress), as.character(orders.train$size),NA)
 
 # check
 table(orders.train$sizeLetter)
 table(orders.train$sizePant)
 table(orders.train$sizeChild)
+table(orders.train$sizeShoeDress)
 table(orders.train$sizeOther)
+#table(orders.train$sizePlus)
+
+# Identification Markers for various clothing type
+orders.train$LetterSize <- ifelse(is.na(orders.train$sizeLetter),0,1)
+orders.train$Pants <- ifelse(is.na(orders.train$sizePant),0,1)
+orders.train$ChildSize <- ifelse(is.na(orders.train$sizeChild),0,1)
+orders.train$ShoeDress <- ifelse(is.na(orders.train$sizeShoeDress),0,1)
+#orders.train$PlusSize <- ifelse(is.na(orders.train$sizePlus),0,1)
+
+
 
 ##### Euro Women's Dress sizes seem to range between 28 and 54 - maybe we leave these alone and in 'other'
 #  https://www.google.com/search?q=dress+sizes&tbm=isch&tbo=u&source=univ&sa=X&ei=giRfU_LmMKa6yQGu4IHwDw&ved=0CCgQsAQ&biw=1080&bih=484#q=european+dress+sizes&tbm=isch&facrc=_&imgrc=VvapZ5APyTOnrM%253A%3B-WKQ1Hty0kzBiM%3Bhttp%253A%252F%252Fwww.europeword.com%252Fblog%252Fwp-content%252Fuploads%252Feuropean-dress-sizes.jpg%3Bhttp%253A%252F%252Fwww.europeword.com%252Fblog%252Feurope%252Feuropean-dress-sizes%252F%3B756%3B479
 #  Tried to look up men's shirt sizes too, but there is a lot of overlap in the systems here
-#  Last idea is that maybe sizes < 20 are US type sizes - either for shoes or women's dresses 
-#  both are difficult to size without trying on, # so maybe we try that?
 #####
 #### DO WE NEED TO ADD PLUS SIZES HERE??? ######
-orders.train$sizeShoeDress <- ifelse(as.numeric(as.character(orders.train$size))>=1 & as.numeric(as.character(orders.train$size))<=20,as.numeric(as.character(orders.train$size)),NA)
-size.table <- size.table[-which(as.numeric(as.character(size.table$size))>=1 & as.numeric(as.character(size.table$size))<=20),]
-table(orders.train$sizeShoeDress)
+
+
 
 ####### END SIZING #########
 
@@ -137,6 +196,8 @@ ggplot(orders.train,aes(x=price)) + geom_density(fill="grey") + ggtitle("Price D
 ggplot(orders.train,aes(x=timeToDeliver)) + geom_density(fill="grey") + ggtitle("Delivery Time Distribution")
 ggplot(orders.train,aes(x=customerAge)) + geom_density(fill="grey") + ggtitle("Age Distribution")
 ggplot(orders.train,aes(x=accountAge)) + geom_density(fill="grey") + ggtitle("Account Age Distribution")
+
+
 
 # Add mode function - note that this only gives one mode if there is more than one
 mymode <- function(x){

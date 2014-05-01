@@ -94,6 +94,15 @@ auto.arima(ts.orders)
 # We should add simple t-tests for binary variables since we have a binary response variabe
 # independent 2-group t-test
 t.test(y~x) # where y is numeric and x is a binary factor
+t.test(returnShipment~holidayFlag, data=orders.train) # statistically significant
+t.test(returnShipment~bdayFlag, data=orders.train) # not statistically significant
+t.test(returnShipment~manufRiskFlag, data=orders.train) # TOTALLY statistically significant
+t.test(returnShipment~itemRiskFlag, data=orders.train) # TOTALLY statistically significant
+t.test(returnShipment~custRiskFlag, data=orders.train) # TOTALLY statistically significant
+t.test(returnShipment~LetterSize, data=orders.train) # statistically significant
+t.test(returnShipment~Pants, data=orders.train) # not statistically significant @95% c.i.
+t.test(returnShipment~ChildSize, data=orders.train) # statistically significant
+t.test(returnShipment~ShoeDress, data=orders.train) # statistically significant
 
 
 # Plot Histograms for all variables by class

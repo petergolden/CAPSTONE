@@ -1,3 +1,6 @@
+# Add Libraries
+library(ROCR)
+library(caret)
 # Models and ML Algorithms
 
 summary(orders.train)
@@ -10,8 +13,10 @@ summary(orders.train)
 # LR "Full Model"
 returns.lr <- glm(returnShipment ~ color + timeToDeliver + accountAge 
                   + customerAge + holidayFlag + bdayFlag + numItemsInOrder
-                  + manufRiskFlag + itemRiskFlag,
-              family=binomial(link=logit), data=orders.train)
+                  + manufRiskFlag + itemRiskFlag + custRiskFlag 
+                  + LetterSize + Pants + ChildSize + ShoeDress + difFromMeanPrice + state
+                  + price + salutation + customerAge + accountAge,
+              family=binomial(link=logit), data=train)
 summary(returns.lr)
 
 # Backwards elimination selection
@@ -25,10 +30,10 @@ summary(returns.backward)
 # TO Get ROC Curves
 # get predictions from model 
 # NEED TO KNOW WHAT WE CALL TRAIN AND TEST DATA SETS
-predict.train.logistic <- predict(returns.lr, orders.train, type="response")
-predict.test.logistic <- predict(returns.lr, orders.test, type="response")
+predict.train.logistic <- predict(returns.lr, train, type="response")
+predict.test.logistic <- predict(returns.lr, test, type="response")
 
-train.logistic.pred <- prediction(predict.train.logistic, orders.train$returnShipment)
+train.logistic.pred <- prediction(predict.train.logistic, train$returnShipment)
 train.logistic.roc <- performance(train.logistic.pred, "tpr","fpr")
 train.logistic.auc <- (performance(train.logistic.pred, "auc"))@y.values
 
@@ -37,7 +42,7 @@ test.logistic.roc <- performance(test.logistic.pred, "tpr","fpr")
 test.logistic.auc <- (performance(test.logistic.pred, "auc"))@y.values
 
 # plot the full model ROC curves
-pdf(file = "full_model_ROC.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
+pdf(file = "LR_model_ROC.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
 plot(train.logistic.roc, col = "darkgreen", main = "ROC Curves for Logistic Regression Model")
 plot(test.logistic.roc, col = "red",  add = TRUE)
 abline(c(0,1))
@@ -45,14 +50,14 @@ abline(c(0,1))
 train.legend <- paste("Train: AUC=", round(train.logistic.auc[[1]], digits=3))
 test.legend <- paste("Test : AUC=", round(test.logistic.auc[[1]], digits=3))
 legend(0.6, 0.5, c(train.legend,test.legend), c(3,2))
-
+dev.off()
 
 #------------------#
 # Confusion Matrix #  
 #------------------#
 # We need to convert preds to actual choice; introduce 'cut'
 # selected a p=.65 cutoff after review of ROC
-predictions<-cut(rpredict.test.logistic, c(-Inf,0.65,Inf), labels=c("ATT","OCC"))
+predictions<-cut(predict.test.logistic, c(-Inf,0.5,Inf), labels=c("Keep","Return"))
 # Now have a look - classes are assigned
 str(predictions)
 summary(predictions)

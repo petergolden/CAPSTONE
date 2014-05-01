@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1398916226382.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "28DBEB46",
+    "lastKnownWriteTime" : 3546978538818397489,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "size.table",
+        "contentUrl" : "content?title=size.table&file=ce1f6ef6571e480f9155ab15dce73e0d.htm",
+        "displayedObservations" : 122,
+        "displayedVariables" : 2,
+        "totalObservations" : 122,
+        "variables" : 2
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

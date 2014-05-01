@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1398920374418.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "AF92AEC",
+    "lastKnownWriteTime" : 27303364806049904,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "itemPricing",
+        "contentUrl" : "content?title=itemPricing&file=08daacb41329487abe7a2cf9758b026e.htm",
+        "displayedObservations" : 1000,
+        "displayedVariables" : 7,
+        "totalObservations" : 3007,
+        "variables" : 7
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}
