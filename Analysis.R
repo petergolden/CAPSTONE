@@ -19,6 +19,11 @@ library(car)
 library(RWeka)
 library(corrgram)
 
+
+#------------------------#
+#  Train & Test Split    #
+#------------------------#
+
 # Train/Test split (doing 70/30, based on number of orders)
 # Just writing out syntax here- probably makes more sense to put it after the EDA, though.
 # There's probably a more elegant way to do this but I just went with syntax I already know. Feel free to update.
@@ -29,6 +34,9 @@ orders.train$trainTest <- train_ind[orders.train$orderID]
 train <- orders.train[which(orders.train$trainTest>0), ]
 test <- orders.train[-which(orders.train$trainTest>0), ]
 remove(smp_size,train_ind)
+
+#------END TRAIN/TEST SPLIT-------#
+
 
 # Look at PDF of numeric variables given reponse
 # Note that we're just using a random sample due to processing time for graphics
@@ -60,6 +68,7 @@ plot(orders.sample, cex=0.1)
 #--------------------------#
 
 # Not sure who added this section (JB?), but it's not working for me (KT)
+# It was JB.  Maybe too much data?  Pete will pick this up.
 
 # using mi package - get visual plot of missing obs
 pdf(file = "missing_obs_plots.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
@@ -73,6 +82,10 @@ sum(is.na(orders.train$variable_names))
 #      Imputation???       #
 #--------------------------#
 # need to decide on imputation method: mice?, 
+
+
+
+
 
 # Time-series data - taking the mean of return aggregated by order date
 # NOTE- it's been awhile since I've done a TS analysis, so really I was just looking at the plots & packages here. It will likely need a fair bit of revisions.
@@ -218,9 +231,9 @@ xyplot(jitter(sqrtprice) ~ jitter(carat) | channel + cut,
 # May need to add pruning rules for j48 and JRip #
 
 # to run j48 in RWeka
-returns_j48 <- J48(class ~., data = orders.train)
+returns_j48 <- J48(returnShipment~., data = train)
 returns_j48
-summary(wine_j48)
+summary(returns_j48)
 
 # to add a 10-folds cross-validation (does it help?)
 eval_j48 <- evaluate_Weka_classifier(returns_j48, numFolds = 10, complexity = FALSE, 

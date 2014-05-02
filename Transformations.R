@@ -214,7 +214,7 @@ custMode <- merge(custMode,custMode3,by="customerID",all=T)
 custMode <- merge(custMode,custMode4,by="customerID",all=T)
 custMode <- merge(custMode,custMode5,by="customerID",all=T)
 custMode <- merge(custMode,custMode6,by="customerID",all=T)
-names(custMode) <- c("customerID","sizeMode","szLetterMode","szPantMode", "szChildMode", "szOtherMode", "szShoeDressMode"")
+names(custMode) <- c("customerID","sizeMode","szLetterMode","szPantMode", "szChildMode", "szOtherMode", "szShoeDressMode")
 # Merge back into original file, then drop the unnecessary data frames to clean up the workspace
 ##### Should we be looking at mode for each clothing type, and just noting if the next order does not belong to that mode for that type,
 ##### or is this just getting too complicated?

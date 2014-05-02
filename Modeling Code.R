@@ -58,12 +58,13 @@ str(predict.test.logistic)
 # Confusion Matrix #  
 #------------------#
 # We need to convert preds to actual choice; introduce 'cut'
-# selected a p=.65 cutoff after review of ROC
-predictions<-cut(predict.test.logistic, c(-Inf,0.5,Inf), labels=c("Keep","Return"))
+# selected a p=.4 cutoff after review of ROC
+predictions<-cut(predict.test.logistic, c(-Inf,0.4,Inf), labels=c("Keep","Return"))
 # Now have a look - classes are assigned
 str(predictions)
 summary(predictions)
 # compare to test$pick to ensure same # of levels and obs
+# Need to impute or eliminate observations with NAs or else have above issue
 str(test$returnShipment)
 summary(test$returnShipment)
 
@@ -81,7 +82,7 @@ library(RWeka)
 returns_j48 <- J48(returnShipment ~ color + timeToDeliver + accountAge 
                      + customerAge + holidayFlag + bdayFlag + numItemsInOrder
                      + manufRiskFlag + itemRiskFlag
-                     , data = orders.train)
+                     , data = train)
 returns_j48
 summary(returns_j48)
 
@@ -110,6 +111,10 @@ library(e1071)  	#for Support Vector Machines
 
 
 #------PLACE HOLDER FROM 412 CODE------------#
+
+# Whoa there!  This one killed my PC! (JB)  
+# Not sure if that's b/c of the NA's or if it's an expensive computational method
+
 
 svmmodel <- svm(returnShipment ~ color + timeToDeliver + accountAge 
                 + customerAge + holidayFlag + bdayFlag + numItemsInOrder
