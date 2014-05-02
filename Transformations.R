@@ -208,11 +208,13 @@ custMode2 <- summaryBy(sizeLetter ~ customerID, orders.train[-which(is.na(orders
 custMode3 <- summaryBy(sizePant ~ customerID, orders.train[-which(is.na(orders.train$sizePant)),], FUN=mymode)
 custMode4 <- summaryBy(sizeChild ~ customerID, orders.train[-which(is.na(orders.train$sizeChild)),], FUN=mymode)
 custMode5 <- summaryBy(sizeOther ~ customerID, orders.train[-which(is.na(orders.train$sizeOther)),], FUN=mymode)
+custMode6 <- summaryBy(sizeShoeDress ~ customerID, orders.train[-which(is.na(orders.train$sizeShoeDress)),], FUN=mymode)
 custMode <- merge(custMode1,custMode2,by="customerID",all=T)
 custMode <- merge(custMode,custMode3,by="customerID",all=T)
 custMode <- merge(custMode,custMode4,by="customerID",all=T)
 custMode <- merge(custMode,custMode5,by="customerID",all=T)
-names(custMode) <- c("customerID","sizeMode","szLetterMode","szPantMode", "szChildMode", "szOtherMode")
+custMode <- merge(custMode,custMode6,by="customerID",all=T)
+names(custMode) <- c("customerID","sizeMode","szLetterMode","szPantMode", "szChildMode", "szOtherMode", "szShoeDressMode"")
 # Merge back into original file, then drop the unnecessary data frames to clean up the workspace
 ##### Should we be looking at mode for each clothing type, and just noting if the next order does not belong to that mode for that type,
 ##### or is this just getting too complicated?

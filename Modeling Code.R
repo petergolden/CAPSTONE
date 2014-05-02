@@ -52,6 +52,8 @@ test.legend <- paste("Test : AUC=", round(test.logistic.auc[[1]], digits=3))
 legend(0.6, 0.5, c(train.legend,test.legend), c(3,2))
 dev.off()
 
+str(predict.test.logistic) 
+
 #------------------#
 # Confusion Matrix #  
 #------------------#
@@ -62,10 +64,10 @@ predictions<-cut(predict.test.logistic, c(-Inf,0.5,Inf), labels=c("Keep","Return
 str(predictions)
 summary(predictions)
 # compare to test$pick to ensure same # of levels and obs
-str(test$pick)
-summary(test$pick)
+str(test$returnShipment)
+summary(test$returnShipment)
 
-confusionMatrix(predictions, test$pick)
+confusionMatrix(predictions, test$returnShipment)
 
 
 
@@ -93,18 +95,63 @@ library(randomForest)
 fit <- randomForest(returnShipment ~ color + timeToDeliver + accountAge 
                     + customerAge + holidayFlag + bdayFlag + numItemsInOrder
                     + manufRiskFlag + itemRiskFlag
-                      , data = orders.train)
+                      , data = train)
 print(fit) # view results
 importance(fit) # importance of each predictor 
 # we note variable x1 is most important, followed by x2, x3, and x4
 
 RFprediction <- predict(fit, test)
-confusionMatrix(RFprediction, test$pick)
+confusionMatrix(RFprediction, test$returnShipment)
 
 #-----------------------------#
 #   Support Vector Machines   #
 #-----------------------------#
+library(e1071)  	#for Support Vector Machines
 
+
+#------PLACE HOLDER FROM 412 CODE------------#
+
+svmmodel <- svm(returnShipment ~ color + timeToDeliver + accountAge 
+                + customerAge + holidayFlag + bdayFlag + numItemsInOrder
+                + manufRiskFlag + itemRiskFlag
+                , data = train)
+print(svmmodel)
+summary(svmmodel)
+
+svmprediction <- predict(svmmodel, test)
+confusionMatrix(svmprediction, test$returnShipment)
+ca <- table(svmprediction, test$returnShipment)
+classAgreement(ca)
+
+# optimize C and Gamma
+tobj <- tune.svm(returnShipment ~ color + timeToDeliver + accountAge 
+                 + customerAge + holidayFlag + bdayFlag + numItemsInOrder
+                 + manufRiskFlag + itemRiskFlag
+                 , data = train, 
+                 gamma = 10^(-6:-3), cost = 10^(1:2))
+summary(tobj)
+
+#plot error landscape
+pdf(file = "SVM_error_landscape.pdf", width = 11, height = 8.5)	##/\open pdf/\##
+plot(tobj, transform.x = log10, xlab = expression(log[10](gamma)),
+     ylab = "C")
+dev.off()										##\/close pdf\/##
+
+
+# use optimized  C and gamma
+bestGamma <- tobj$best.parameters[[1]]
+bestC <- tobj$best.parameters[[2]]
+newsvmmodel <- svm(returnShipment ~ ., data = train,
+                   cost = bestC, gamma = bestGamma, cross = 10)
+summary(newsvmmodel)
+
+# show confusion matrix
+newsvmprediction <- predict(newsvmmodel, test)
+confusionMatrix(newsvmprediction, test$returnShipment)
+
+# show class agreement function
+ca <- table(newsvmprediction, test$returnShipment)
+classAgreement(ca)
 
 
 # Ensemble Methods
