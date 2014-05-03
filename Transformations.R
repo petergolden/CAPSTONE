@@ -104,19 +104,35 @@ orders.train$accountAge <- round(as.numeric(difftime(orders.train$orderDate,orde
 # want customer's age as an integer, similar to when you ask how old someone is
 orders.train$customerAge <- floor(as.numeric(difftime(orders.train$orderDate,orders.train$dateOfBirth,unit="weeks"))/52.25)
 # Check
-summary(orders.train[15:17])
+# summary(orders.train[15:17])
 # timeToDeliver should never be negative, and age should never be negative
 orders.train$timeToDeliver <- ifelse(orders.train$timeToDeliver<0,NA,orders.train$timeToDeliver)
 orders.train$customerAge <- ifelse(orders.train$customerAge<0,NA,orders.train$customerAge)
 # age should also probably not be > 100 - what should we use for the cut-off?
 orders.train$customerAge <- ifelse(orders.train$customerAge>100,NA,orders.train$customerAge)
 # Recheck
-summary(orders.train[15:17])
+# summary(orders.train[15:17])
+
+
+#----------------------------------#
+# Densities for all numeric (non-ID)
+ggplot(orders.train,aes(x=price)) + geom_density(fill="grey") + ggtitle("Price Distribution")
+ggplot(orders.train,aes(x=timeToDeliver)) + geom_density(fill="grey") + ggtitle("Delivery Time Distribution")
+ggplot(orders.train,aes(x=customerAge)) + geom_density(fill="grey") + ggtitle("Age Distribution")
+ggplot(orders.train,aes(x=accountAge)) + geom_density(fill="grey") + ggtitle("Account Age Distribution")
+#----------------------------------#
+
 
 # Recode ? to NA for color
 orders.train$color <- ifelse(orders.train$color=="?",NA,orders.train$color)
 # Recode "not reported" to NA for salutation
 orders.train$salutation <- ifelse(orders.train$salutation=="not reported",NA,orders.train$salutation)
+
+
+
+#----------------------------------------#
+#   Transformation code applied to Size  #
+#----------------------------------------#
 
 # Sizing recodes - creating a table with frequencies to work from and going to remove sizes as I recode them
 # There may be some errors here- for example, Euro children's sizes start at 50, but some conversions go up to size 52 for men's suits, etc
@@ -180,24 +196,16 @@ orders.train$ShoeDress <- ifelse(is.na(orders.train$sizeShoeDress),0,1)
 #orders.train$PlusSize <- ifelse(is.na(orders.train$sizePlus),0,1)
 
 
-
 ##### Euro Women's Dress sizes seem to range between 28 and 54 - maybe we leave these alone and in 'other'
 #  https://www.google.com/search?q=dress+sizes&tbm=isch&tbo=u&source=univ&sa=X&ei=giRfU_LmMKa6yQGu4IHwDw&ved=0CCgQsAQ&biw=1080&bih=484#q=european+dress+sizes&tbm=isch&facrc=_&imgrc=VvapZ5APyTOnrM%253A%3B-WKQ1Hty0kzBiM%3Bhttp%253A%252F%252Fwww.europeword.com%252Fblog%252Fwp-content%252Fuploads%252Feuropean-dress-sizes.jpg%3Bhttp%253A%252F%252Fwww.europeword.com%252Fblog%252Feurope%252Feuropean-dress-sizes%252F%3B756%3B479
 #  Tried to look up men's shirt sizes too, but there is a lot of overlap in the systems here
 #####
 #### DO WE NEED TO ADD PLUS SIZES HERE??? ######
 
-
-
-####### END SIZING #########
-
-# Densities for all numeric (non-ID)
-ggplot(orders.train,aes(x=price)) + geom_density(fill="grey") + ggtitle("Price Distribution")
-ggplot(orders.train,aes(x=timeToDeliver)) + geom_density(fill="grey") + ggtitle("Delivery Time Distribution")
-ggplot(orders.train,aes(x=customerAge)) + geom_density(fill="grey") + ggtitle("Age Distribution")
-ggplot(orders.train,aes(x=accountAge)) + geom_density(fill="grey") + ggtitle("Account Age Distribution")
-
-
+#--------------------------------#
+# Size Modes                     #
+# need to code application still #
+#--------------------------------#
 
 # Add mode function - note that this only gives one mode if there is more than one
 mymode <- function(x){
@@ -220,6 +228,9 @@ names(custMode) <- c("customerID","sizeMode","szLetterMode","szPantMode", "szChi
 ##### or is this just getting too complicated?
 orders.train <- merge(orders.train,custMode,by="customerID",all=T)
 remove(custMode,custMode1,custMode2,custMode3,custMode4,custMode5,size.table)
+
+####### END SIZING CODE #########
+#---------------------------------------------#
 
 # Add holiday/bday flags
 # NOTE: ALL OBS ARE MARKED '1' FOR BDAY

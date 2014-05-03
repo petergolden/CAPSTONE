@@ -11,11 +11,11 @@
     "project_path" : null,
     "properties" : {
         "caption" : "itemPricing",
-        "contentUrl" : "content?title=itemPricing&file=2e5fadb82f36494eb1a6a45cb1778387.htm",
-        "displayedObservations" : 1000,
+        "contentUrl" : "content?title=itemPricing&file=2bb18bde0314431c80f0506087fef4ae.htm",
+        "displayedObservations" : "1000",
         "displayedVariables" : 7,
-        "totalObservations" : 3007,
-        "variables" : 7
+        "totalObservations" : "3007",
+        "variables" : "7"
     },
     "source_on_save" : false,
     "type" : "r_dataframe"
