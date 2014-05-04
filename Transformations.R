@@ -2,10 +2,14 @@
 # Libraries
 library(doBy)
 library(ggplot2)
-
+library(mice)
+library(plyr)
 # Read in data from GitHub
 orders.train <- read.table("orders_train.txt", header = TRUE, sep = ";")
-str(orders.train)
+
+#Read in our color mapping
+colorMap <- read.table("Color mapping.csv", header = TRUE, sep = ",", as.is = TRUE)
+
 
 #-----------------------#
 # Correct Data Formats  #
@@ -96,6 +100,69 @@ remove(cust.check)
 #     And Data Cleaning    #
 #--------------------------#
 
+#Lets recode & impute prior to making further transformations on our variables
+
+# Recode ? to NA for color
+orders.train$color <- mapvalues(orders.train$color, from = colorMap$original.color, to = colorMap$mapped)
+orders.train$color[orders.train$color =="?"] <- NA
+
+# Recode "not reported" to NA for salutation
+orders.train$salutation[orders.train$salutation =="not reported"] <- NA
+
+#Rows with missing delivery dates we are assuming were not delivered, take them out
+orders.train <- orders.train[!(is.na(orders.train$deliveryDate)),]
+
+#Identify 'high risk' and 'low risk' sizes
+orders.train$sizeHighRisk <- orders.train$size == '40' | orders.train$size == '41'  | orders.train$size == '42'
+orders.train$sizeLowRisk <- orders.train$size == 'unsized' 
+
+
+#Mice is unable to impute on entire dataset (too many observations, becomes singular)
+#So taking a subset of 100,000 observations (including those with missing observations)
+#to perform imputation on
+
+#lets copy this data over so we don't mess with the original
+#size has 122 levels, imputing using it is going to be a mess, we'll omit
+orders.missing <- orders.train[!complete.cases(orders.train),c(-2,-3,-5,-13) ]
+orders.complete <- orders.train[complete.cases(orders.impute),c(-2,-3,-5,-13)]
+
+set.seed(2000)
+#Need 54567 more observations to impute on
+orders.impute <- rbind(orders.missing, orders.complete[sample(nrow(orders.complete),size = 54567),])
+  
+#MICE doesn't like the date format, so let's change to numeric...
+#orders.impute$orderDate <- as.numeric(orders.impute$orderDate)
+#orders.impute$deliveryDate <- as.numeric(orders.impute$deliveryDate)
+orders.impute$dateOfBirth <- as.numeric(orders.impute$dateOfBirth)
+#orders.impute$creationDate <- as.numeric(orders.impute$creationDate)
+
+imputedTrain <- mice(orders.impute, m=1) 
+imputedData <- complete(imputedTrain)
+
+#Convert DOBs back to dates
+imputedData$dateOfBirth <- as.Date(imputedData$dateOfBirth, origin = "1970-01-01")
+
+#save imputed data back to our orders.train for all the observations missing values
+orders.train <- merge( orders.train, imputedData, by.x = "orderItemID", 
+                           by.y = "orderItemID", all.x = TRUE, suffixes = c("",".y"))
+
+orders.train[is.na(orders.train$color), "color"] <-  orders.train[is.na(orders.train$color), "color.y"]
+orders.train[is.na(orders.train$salutation), "salutation"] <-  orders.train[is.na(orders.train$salutation), "salutation.y"]
+orders.train[is.na(orders.train$dateOfBirth), "dateOfBirth"] <-  orders.train[is.na(orders.train$dateOfBirth), "dateOfBirth.y"]
+summary(orders.train$color)
+
+#Get rid of the extra merged columns
+orders.train <- orders.train[,1:16]
+
+#write imputed date to file
+# WARNING --- This will over-write the currently saved imputed data! 
+#save(orders.train, file = "ImputedOrders.RData")
+
+#This will load the imputed version of orders.train
+# WARNING! This will overwrite your environments current version of orders.train
+#test <- load("ImputedOrders.RData")
+
+
 # Add date diff variables
 # Time from when order was placed to delivery, in days
 orders.train$timeToDeliver <- as.numeric(difftime(orders.train$deliveryDate,orders.train$orderDate,unit="days"))
@@ -113,10 +180,6 @@ orders.train$customerAge <- ifelse(orders.train$customerAge>100,NA,orders.train$
 # Recheck
 summary(orders.train[15:17])
 
-# Recode ? to NA for color
-orders.train$color <- ifelse(orders.train$color=="?",NA,orders.train$color)
-# Recode "not reported" to NA for salutation
-orders.train$salutation <- ifelse(orders.train$salutation=="not reported",NA,orders.train$salutation)
 
 # Sizing recodes - creating a table with frequencies to work from and going to remove sizes as I recode them
 # There may be some errors here- for example, Euro children's sizes start at 50, but some conversions go up to size 52 for men's suits, etc
