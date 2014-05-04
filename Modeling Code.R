@@ -109,6 +109,60 @@ importance(fit) # importance of each predictor
 RFprediction <- predict(fit, test)
 confusionMatrix(RFprediction, test$returnShipment)
 
+# KT - Code from 412 week 5, need to update to current dataset
+################ Random Forest Model ###################
+# References for this section: 
+# http://www.stanford.edu/~stephsus/R-randomforest-guide.pdf
+# http://heuristically.wordpress.com/2009/12/18/plot-roc-curve-lift-chart-random-forest/
+
+set.seed(498)
+pdf("RandomForestPlots.pdf")
+
+# fit a random forest model to training set
+data.controls <- cforest_unbiased(ntree=1000, mtry=7) #ntree should be increased from default of 500 based on number of predictors and datapoints, mtry default is 5, suggested is sqrt of predictors
+cforest.model <- cforest(class ~., data = working.train, controls=data.controls) 
+
+# Variable importance - note this can also be done using randomForest as the library, but produces a dot plot
+data.cforest.varimp <- varimp(cforest.model)
+barplot(sort(data.cforest.varimp), horiz=T, xlab="Variable Importance in mydata",las=1,cex.names=0.5)
+abline(v=mean(data.cforest.varimp), col="red",lty="longdash", lwd=2)
+abline(v=median(data.cforest.varimp), col="blue", lwd=2)
+legend("bottomright",c("Mean","Median"),lty=c("longdash","solid"),col=c("red","blue"),lwd=c(2,2))
+
+# Use the model to predict.
+predict.forest.train <- predict(cforest.model)
+predict.forest.test <- predict(cforest.model, newdata = working.test)
+
+# Calculate the overall accuracy.
+train.forest.correct <- predict.forest.train == working.train$class
+test.forest.correct <- predict.forest.test == working.test$class
+
+print(paste("% of predicted classifications correct (Training):", mean(train.forest.correct)))
+print(paste("% of predicted classifications correct (Testing):", mean(test.forest.correct)))
+
+# Extract the class probabilities.
+train.forest.prob <- 1- unlist(treeresponse(cforest.model), use.names=F)[seq(1,nrow(working.train)*2,2)]
+test.forest.prob <- 1- unlist(treeresponse(cforest.model,newdata=working.test), use.names=F)[seq(1,nrow(working.test)*2,2)]
+
+# Plot the performance of the model applied to the evaluation set as an ROC curve.
+train.rocforest.prediction <- prediction(train.forest.prob, working.train$class)
+test.rocforest.prediction <- prediction(test.forest.prob, working.test$class)
+train.rocforest <- performance(train.rocforest.prediction, "tpr","fpr")
+test.rocforest <- performance(test.rocforest.prediction, "tpr","fpr")
+plot(train.rocforest, col="blue", main = "ROC Random Forest")
+plot(test.rocforest, col="red", add = TRUE)
+abline(c(0,1))
+legend("bottomright",c(paste("Training: AUC =",round(as.numeric(performance(train.rocforest.prediction,"auc")@y.values),4)),paste("Test: AUC =",round(as.numeric(performance(test.rocforest.prediction,"auc")@y.values),4))),fill=(c("blue","red")))
+
+# And then a lift chart
+train.liftforest <- performance(train.rocforest.prediction, "lift","rpp")
+test.liftforest <- performance(test.rocforest.prediction, "lift","rpp")
+plot(train.liftforest, col="blue", main = "Lift Curve Random Forest")
+plot(test.liftforest, col="red", add = TRUE)
+legend("bottomleft",c("Training","Test"),fill=(c("blue","red")))
+dev.off()
+
+
 #-----------------------------#
 #   Support Vector Machines   #
 #-----------------------------#
@@ -163,6 +217,73 @@ confusionMatrix(newsvmprediction, test$returnShipment)
 ca <- table(newsvmprediction, test$returnShipment)
 classAgreement(ca)
 
+# KT - This is my code from 412 if it helps, delete if it doesn't!
+################ SVM Model ###################
+# Reference:
+# http://heuristically.wordpress.com/2009/12/23/compare-performance-machine-learning-classifiers-r/
+
+pdf("SVM.pdf")
+
+# svm requires tuning
+set.seed(498)
+x.svm.tune <- tune(svm, class~., data = working.train, ranges = list(gamma = 2^(-12:1), cost = 2^(0:8)), tunecontrol = tune.control(sampling = "fix"))
+# display the tuning results (in text format)
+x.svm.tune
+
+# fit an SVM model to training set
+# Manually copy the cost and gamma from console messages above to parameters below.
+svm.model <- svm(class ~ ., data = working.train, cost=256, gamma=0.0002441406, probability = TRUE)
+
+# Use the model to predict
+predict.svm.train <- predict(svm.model, working.train, probability = TRUE)
+predict.svm.test <- predict(svm.model, newdata = working.test, probability = TRUE)
+
+# Plot the performance of the model applied to the evaluation set as an ROC curve.
+train.rocsvm.prediction <- prediction(attr(predict.svm.train,"probabilities")[,1], working.train$class)
+test.rocsvm.prediction <- prediction(attr(predict.svm.test, "probabilities")[,1], working.test$class)
+train.rocsvm <- performance(train.rocsvm.prediction, "tpr","fpr")
+test.rocsvm <- performance(test.rocsvm.prediction, "tpr","fpr")
+plot(train.rocsvm, col="blue", main = "ROC SVM")
+plot(test.rocsvm, col="red", add = TRUE)
+abline(c(0,1))
+legend("bottomright",c(paste("Training: AUC =",round(as.numeric(performance(train.rocsvm.prediction,"auc")@y.values),4)),paste("Test: AUC =",round(as.numeric(performance(test.rocsvm.prediction,"auc")@y.values),4))),fill=(c("blue","red")))
+
+# And then a lift chart
+train.liftsvm <- performance(train.rocsvm.prediction, "lift","rpp")
+test.liftsvm <- performance(test.rocsvm.prediction, "lift","rpp")
+plot(train.liftsvm, col="blue", main = "Lift Curve SVM")
+plot(test.liftsvm, col="red", add = TRUE)
+legend("bottomleft",c("Training","Test"),fill=(c("blue","red")))
+dev.off()
 
 # Ensemble Methods
 # Perhaps can average prediction from some of above
+
+#----------------------#
+#   Model Comparison   #
+#----------------------#
+
+# Code below is placeholder from 412 and needs to be updated
+################ All Models in one ROC (test data only) ###################
+pdf("ModelComparison.pdf")
+plot(test.roclog, col="blue", main = "ROC Model Comparison")
+plot(test.rocforest, col="red", add = TRUE)
+plot(test.rocsvm, col="green", add = TRUE)
+plot(test.rocbag, col="grey", add = TRUE)
+abline(c(0,1))
+legend("bottomright",c(paste("Logistic: AUC =",round(as.numeric(performance(test.roclog.prediction,"auc")@y.values),4)),paste("Random Forest: AUC =",round(as.numeric(performance(test.rocforest.prediction,"auc")@y.values),4)),paste("SVM: AUC =",round(as.numeric(performance(test.rocsvm.prediction,"auc")@y.values),4)),paste("Bagging: AUC =",round(as.numeric(performance(test.rocbag.prediction,"auc")@y.values),4))),fill=(c("blue","red","green","grey")))
+dev.off()
+
+################ All Models - Numeric Comparisons ###################
+R <- cor(cbind(trainTr$medvTr, fitted(bostonTr.model), fitted(bostonTr.step), predict(bostonTr.tree),predict(bostonTr10.nnet,trainTr)*(max(bostonTr$medvTr)-min(bostonTr$medvTr))*min(bostonTr$medvTr)))
+rownames(R) <- colnames(R) <- c("Actual Values","Transformed","Tr Stepwise","Tr Tree","Tr Network")
+R
+
+Rtest <- cor(cbind(testTr$medvTr, predict(bostonTr.model,testTr), predict(bostonTr.step,testTr), predict(bostonTr.tree,testTr),predict(bostonTr10.nnet,testTr)*(max(bostonTr$medvTr)-min(bostonTr$medvTr))*min(bostonTr$medvTr)))
+rownames(Rtest) <- colnames(Rtest) <- c("Actual Values","Transformed","Tr Stepwise","Tr Tree","Tr Network")
+Rtest
+
+rmse <- function(observed,predicted) {
+  sqrt(mean((observed-predicted)^2))
+}
+c(FullOLS<-rmse(testTr$medvTr,predict(bostonTr.model,testTr)),SubsetOLS<-rmse(testTr$medvTr,predict(bostonTr.step,testTr)),Tree<-rmse(testTr$medvTr,predict(bostonTr.tree,testTr)),NNet<-rmse(testTr$medvTr,predict(bostonTr10.nnet,testTr)*(max(bostonTr$medvTr)-min(bostonTr$medvTr))*min(bostonTr$medvTr)))
