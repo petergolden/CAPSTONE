@@ -439,3 +439,5 @@ str(orders.train)
         # I mapped in max and min price for the item but haven't really done anything else with it... do we want to flag if it's the max price, min price, % discount...?
 # UK or US Manufacturer (indicator variable - based on sizing conventions)
 
+#Save command for after applying all the transformations
+#save(orders.train, file = "imputedOrdersPostTransformation.rdata")

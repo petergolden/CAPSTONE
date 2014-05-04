@@ -1,9 +1,29 @@
 # Add Libraries
 library(ROCR)
 library(caret)
+library(neuralnet)
+
 # Models and ML Algorithms
 
 summary(orders.train)
+
+#------------------------#
+#  Train & Test Split    #
+#------------------------#
+
+# Train/Test split (doing 70/30, based on number of orders)
+# Just writing out syntax here- probably makes more sense to put it after the EDA, though.
+# There's probably a more elegant way to do this but I just went with syntax I already know. Feel free to update.
+smp_size <- floor(0.7 * max(orders.train$orderID))
+set.seed(498)
+train_ind <- sample(seq_len(max(orders.train$orderID)), size = smp_size)
+orders.train$trainTest <- train_ind[orders.train$orderID]
+train <- orders.train[which(orders.train$trainTest>0), ]
+test <- orders.train[-which(orders.train$trainTest>0), ]
+remove(smp_size,train_ind)
+
+#------END TRAIN/TEST SPLIT-------#
+
 
 #----------------------#
 #  Logistic Regression #
@@ -20,7 +40,7 @@ returns.lr <- glm(returnShipment ~ color + timeToDeliver
                   + numCustOrders + numCustReturns + custRiskFlag 
                   + numItemReturns + numItemOrders + itemRiskFlag
                   + numManufOrders + numManufReturns + manufRiskFlag,
-              family=binomial(link=logit), data=train)
+              family=binomial(link=logit), data=orders.train)
 summary(returns.lr)
 
 # Backwards elimination selection
@@ -256,6 +276,70 @@ plot(test.liftsvm, col="red", add = TRUE)
 legend("bottomleft",c("Training","Test"),fill=(c("blue","red")))
 dev.off()
 
+#---------------------------------#
+#   Afrtifical Neural Networks    #
+#                                 #
+#             aka                 #
+#                                 #
+#   Associative Neural Networks   #
+#   (depending on how well I'm    #
+#   proofreading my contributions)#
+#---------------------------------#
+
+set.seed(2000)
+
+#Need to convery all our factors to quantitative inputs using dummy variables
+# R doesn't do this for you -- see http://stackoverflow.com/questions/17457028/working-with-neuralnet-in-r-for-the-first-time-get-requires-numeric-complex-ma
+simpleDesignMatrix <- model.matrix( ~ returnShipment + timeToDeliver, 
+                                    data = orders.train )
+
+nnSimple <- neuralnet(returnShipment ~ timeToDeliver,
+                   data = simpleDesignMatrix, hidden=1, threshold=0.01,
+                   linear.output = FALSE, likelihood = TRUE )
+out <- nnSimple$net.result[[1]]
+head(out)
+#Don't need the intercept for this
+simpleTestMatrix <- simpleDesignMatrix[,3]
+
+simpleResults <- compute(nnSimple, simpleTestMatrix)
+simplePredictions <- predict(nnSimple, simpleTestMatrix, type = "class")
+summary(simpleResults$net.result)
+#Full model
+
+
+################ ANN Model ###################
+
+designMatrix <- model.matrix(~returnShipment + color + timeToDeliver 
+                             + salutation + state
+                             + accountAge + customerAge 
+                             + holidayFlag + bdayFlag 
+                             + LetterSize + Pants + ChildSize + ShoeDress 
+                             + difFromMeanPrice + price  
+                             + numCustOrders + numCustReturns + custRiskFlag 
+                             + numItemReturns + numItemOrders + itemRiskFlag
+                             + numManufOrders + numManufReturns + manufRiskFlag,
+                             data = train)
+
+covList = c("color", "timeToDeliver", "salutation", "state", "accountAge",
+            "customerAge", "holidayFlag", "bdayFlag", "LetterSize", "Pants",
+            "ChildSize", "ShoeDress", "difFromMeanPrice", "price", "numCustOrders",
+            "numCustReturns", "custRiskFlag", "numItemReturns", "numItemOrders",
+            "itemRiskFlag", "numManufOrders", "numManufReturns", "manufRiskFlag")
+
+nn <- neuralnet(returnShipment ~ color + timeToDeliver 
+                + salutation + state
+                + accountAge + customerAge 
+                + holidayFlag + bdayFlag 
+                + LetterSize + Pants + ChildSize + ShoeDress 
+                + difFromMeanPrice + price  
+                + numCustOrders + numCustReturns + custRiskFlag 
+                + numItemReturns + numItemOrders + itemRiskFlag
+                + numManufOrders + numManufReturns + manufRiskFlag,
+                data = simpleDesignMatrix, hidden=1, threshold=0.01,
+                linear.output = FALSE, likelihood = TRUE )
+
+simpleResults <- compute(nn, test[, covList])
+
 # Ensemble Methods
 # Perhaps can average prediction from some of above
 
@@ -282,6 +366,12 @@ R
 Rtest <- cor(cbind(testTr$medvTr, predict(bostonTr.model,testTr), predict(bostonTr.step,testTr), predict(bostonTr.tree,testTr),predict(bostonTr10.nnet,testTr)*(max(bostonTr$medvTr)-min(bostonTr$medvTr))*min(bostonTr$medvTr)))
 rownames(Rtest) <- colnames(Rtest) <- c("Actual Values","Transformed","Tr Stepwise","Tr Tree","Tr Network")
 Rtest
+
+############### All models ---- AIC / BIC ###############################
+aic.lr <- AIC(returns.lr)
+bic.lr <- BIC(returns.lr)
+
+
 
 rmse <- function(observed,predicted) {
   sqrt(mean((observed-predicted)^2))
