@@ -11,11 +11,15 @@ summary(orders.train)
 # Look at Week 3 assignment of Predict 412
 
 # LR "Full Model"
-returns.lr <- glm(returnShipment ~ color + timeToDeliver + accountAge 
-                  + customerAge + holidayFlag + bdayFlag + numItemsInOrder
-                  + manufRiskFlag + itemRiskFlag + custRiskFlag 
-                  + LetterSize + Pants + ChildSize + ShoeDress + difFromMeanPrice + state
-                  + price + salutation + customerAge + accountAge,
+returns.lr <- glm(returnShipment ~ color + timeToDeliver 
+                  + salutation + state
+                  + accountAge + customerAge 
+                  + holidayFlag + bdayFlag 
+                  + LetterSize + Pants + ChildSize + ShoeDress 
+                  + difFromMeanPrice + price  
+                  + numCustOrders + numCustReturns + custRiskFlag 
+                  + numItemReturns + numItemOrders + itemRiskFlag
+                  + numManufOrders + numManufReturns + manufRiskFlag,
               family=binomial(link=logit), data=train)
 summary(returns.lr)
 
@@ -43,6 +47,7 @@ test.logistic.auc <- (performance(test.logistic.pred, "auc"))@y.values
 
 # plot the full model ROC curves
 pdf(file = "LR_model_ROC.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
+
 plot(train.logistic.roc, col = "darkgreen", main = "ROC Curves for Logistic Regression Model")
 plot(test.logistic.roc, col = "red",  add = TRUE)
 abline(c(0,1))

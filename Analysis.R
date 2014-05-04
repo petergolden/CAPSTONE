@@ -104,9 +104,9 @@ auto.arima(ts.orders)
 #------------#
 # t-tests    #
 #------------#
-# We should add simple t-tests for binary variables since we have a binary response variabe
+# We should add simple t-tests for binary explanatory variables
 # independent 2-group t-test
-t.test(y~x) # where y is numeric and x is a binary factor
+# t.test(y~x) # where y is numeric and x is a binary factor
 t.test(returnShipment~holidayFlag, data=orders.train) # statistically significant
 t.test(returnShipment~bdayFlag, data=orders.train) # not statistically significant
 t.test(returnShipment~manufRiskFlag, data=orders.train) # TOTALLY statistically significant
@@ -117,6 +117,115 @@ t.test(returnShipment~Pants, data=orders.train) # not statistically significant 
 t.test(returnShipment~ChildSize, data=orders.train) # statistically significant
 t.test(returnShipment~ShoeDress, data=orders.train) # statistically significant
 
+# Wait, can we look at continuous variables this way?
+t.test(price~returnShipment, data=orders.train) # statistically significant
+
+
+#---------------#
+# K-S-tests 'D' #
+#---------------#
+# K-S-tests for continuous explanatory variables 
+# K-S test won't use variables 'as-is' - need to create vectors for each response variable
+
+# Price
+priceVector <- orders.train$price
+price0 <- subset(priceVector, orders.train$returnShipment==0)
+p0 <- sort(price0)
+price1 <- subset(priceVector, orders.train$returnShipment==1)
+p1 <- sort(price1)
+ks.test(p0,p1) # statistically significant, moderate - large separation
+remove(price0, price1, priceVector, p0, p1) #clean workspace
+
+# Delivery Time
+# Testng to see if K-S function ranks for us, or if we have to do manually
+shipTime <- orders.train$timeToDeliver
+ship0 <- subset(shipTime, orders.train$returnShipment==0)
+ship1 <- subset(shipTime, orders.train$returnShipment==1)
+ks.test(ship0,ship1) # statistically significant, minor separation
+remove(ship0, ship1, shipTime) #clean workspace
+
+# Looks like we don't have to rank vectors, ks.test does that for us - yay!
+shipTime <- orders.train$timeToDeliver
+ship0 <- subset(shipTime, orders.train$returnShipment==0)
+s0 <- sort(ship0)
+ship1 <- subset(shipTime, orders.train$returnShipment==1)
+s1 <- sort(ship1)
+ks.test(s0,s1) # statistically significant, minor separation
+remove(ship0, ship1, shipTime, s0, s1) #clean workspace
+
+# Age of Account
+acctAge <- orders.train$accountAge
+acctAge0 <- subset(acctAge, orders.train$returnShipment==0)
+acctAge1 <- subset(acctAge, orders.train$returnShipment==1)
+ks.test(acctAge0, acctAge1) # statistically significant, very little separation, though
+remove(acctAge0, acctAge1, acctAge) #clean workspace
+
+# Age of Customer
+custAge <- orders.train$customerAge
+custAge0 <- subset(custAge, orders.train$returnShipment==0)
+custAge1 <- subset(custAge, orders.train$returnShipment==1)
+ks.test(custAge0, custAge1) # statistically significant, minor separation
+remove(custAge0, custAge1, custAge) #clean workspace
+
+# Number of Items in that day's order - proxy for basket size
+numItems <- orders.train$numItemsInOrder
+numItems0 <- subset(numItems, orders.train$returnShipment==0)
+numItems1 <- subset(numItems, orders.train$returnShipment==1)
+ks.test(numItems0, numItems1) # statistically significant, moderate - large separation
+remove(numItems0, numItems1, custAge) #clean workspace
+
+# Frequency of returns for that manufacturer
+manRet <- orders.train$numManufReturns
+manRet0 <- subset(manRet, orders.train$returnShipment==0)
+manRet1 <- subset(manRet, orders.train$returnShipment==1)
+ks.test(manRet0, manRet1) # statistically significant, moderate - large separation
+remove(manRet0, manRet1, manRet) #clean workspace
+
+
+# Number of orders for a manufacturer
+manOrd <- orders.train$numManufOrders
+manOrd0 <- subset(manOrd, orders.train$returnShipment==0)
+manOrd1 <- subset(manOrd, orders.train$returnShipment==1)
+ks.test(manOrd0, manOrd1) # statistically significant, minor separation
+remove(manOrd0, manOrd1, manOrd) #clean workspace
+
+# Frequency of returns for item ordered
+itemRet <- orders.train$numItemReturns
+itemRet0 <- subset(itemRet, orders.train$returnShipment==0)
+itemRet1 <- subset(itemRet, orders.train$returnShipment==1)
+ks.test(itemRet0, itemRet1) # statistically significant, VERY large separation
+remove(itemRet0, itemRet1, itemRet) #clean workspace
+
+# Number of orders for item ordered
+itemOrd <- orders.train$numItemOrders
+itemOrd0 <- subset(itemOrd, orders.train$returnShipment==0)
+itemOrd1 <- subset(itemOrd, orders.train$returnShipment==1)
+ks.test(itemOrd0, itemOrd1) # statistically significant, minor - moderate separation
+remove(itemOrd0, itemOrd1, itemOrd) #clean workspace
+
+# Difference from the Mean Price for that item
+meanDif <- orders.train$diffFromMeanPrice
+meanDif0 <- subset(meanDif, orders.train$returnShipment==0)
+meanDif1 <- subset(meanDif, orders.train$returnShipment==1)
+ks.test(meanDif0, meanDif1) # statistically significant, minor - moderate separation
+remove(meanDif0, meanDif1, meanDif) #clean workspace
+
+# Frequency of returns for that Customer
+custRet <- orders.train$numCustReturns
+custRet0 <- subset(custRet, orders.train$returnShipment==0)
+custRet1 <- subset(custRet, orders.train$returnShipment==1)
+ks.test(custRet0, custRet1) # statistically significant, GARGANTUAN SEPARATION
+remove(custRet0, custRet1, custRet) #clean workspace
+
+# Number of orders for that Customer
+custOrd <- orders.train$numCustOrders
+custOrd0 <- subset(custOrd, orders.train$returnShipment==0)
+custOrd1 <- subset(custOrd, orders.train$returnShipment==1)
+ks.test(custOrd0, custOrd1) # statistically significant, minor separation
+remove(custOrd0, custOrd1, custOrd) #clean workspace
+
+
+#------------End KS----------------#
 
 # Plot Histograms for all variables by class
 # will need to sub in our data names #
