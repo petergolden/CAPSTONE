@@ -105,9 +105,9 @@ confusionMatrix(predictions, test$returnShipment)
 str(predictions)
 str(test$returnShipment)
 
-#clean workspace for next algorithm
+#clean workspace for next algorithm (KT- leave test.logistic.roc/test.logistic.pred for final comparison)
 remove(predict.test.logistic, predict.train.logistic, predictions, returns.lr, 
-       test.logistic.auc, test.logistic.pred, test.logistic.roc,
+       test.logistic.auc, #test.logistic.pred, test.logistic.roc,
        train.logistic.roc, train.logistic.pred, train.logistic.auc,
        test.legend,train.legend)
 
@@ -181,9 +181,15 @@ train.sample <- train [sample_ind, ]
 
 # fit a random forest model to smaller training set
 data.controls <- cforest_unbiased(ntree=1000, mtry=5) #ntree should be increased from default of 500 based on number of predictors and datapoints, mtry default is 5, suggested is sqrt of predictors
-cforest.model <- cforest(returnShipment ~ color + timeToDeliver + accountAge 
-                         + customerAge + holidayFlag + bdayFlag + numItemsInOrder
-                         + manufRiskFlag + itemRiskFlag
+cforest.model <- cforest(returnShipment ~ color + timeToDeliver 
+                         + salutation + state
+                         + accountAge + customerAge 
+                         + holidayFlag + bdayFlag 
+                         + LetterSize + Pants + ChildSize + ShoeDress 
+                         + difFromMeanPrice + price  
+                         + numCustOrders + numCustReturns + custRiskFlag 
+                         + numItemReturns + numItemOrders + itemRiskFlag
+                         + numManufOrders + numManufReturns + manufRiskFlag
                          , data = train.sample, controls=data.controls) 
 
 # Variable importance - note this can also be done using randomForest as the library, but produces a dot plot
@@ -242,9 +248,9 @@ legend("bottomleft",c("Sample","Test"),fill=(c("green","red")))
 #legend("bottomleft",c("Training","Test"),fill=(c("blue","red")))
 dev.off()
 
-#clean up everything other than the model itself
+#clean up everything other than the model itself & test.rocforest/test.rocforest.prediction
 remove(predict.forest.sample,predict.forest.test,data.cforest.varimp,data.controls,sample.liftforest,sample.rocforest
-       ,sample.rocforest.prediction,sample_ind,test.liftforest,test.rocforest,test.rocforest.prediction)
+       ,sample.rocforest.prediction,sample_ind,test.liftforest)
 
 # reload the neuralnet package so it's available for later syntax
 library(neuralnet)
@@ -416,12 +422,20 @@ simpleResults <- compute(nn, test[, covList])
 # Code below is placeholder from 412 and needs to be updated
 ################ All Models in one ROC (test data only) ###################
 pdf("ModelComparison.pdf")
-plot(test.roclog, col="blue", main = "ROC Model Comparison")
+plot(test.logistic.roc, col="blue", main = "ROC Model Comparison")
 plot(test.rocforest, col="red", add = TRUE)
 plot(test.rocsvm, col="green", add = TRUE)
-plot(test.rocbag, col="grey", add = TRUE)
+plot(test.rocann, col="grey", add = TRUE)
 abline(c(0,1))
-legend("bottomright",c(paste("Logistic: AUC =",round(as.numeric(performance(test.roclog.prediction,"auc")@y.values),4)),paste("Random Forest: AUC =",round(as.numeric(performance(test.rocforest.prediction,"auc")@y.values),4)),paste("SVM: AUC =",round(as.numeric(performance(test.rocsvm.prediction,"auc")@y.values),4)),paste("Bagging: AUC =",round(as.numeric(performance(test.rocbag.prediction,"auc")@y.values),4))),fill=(c("blue","red","green","grey")))
+legend("bottomright",c(paste("Logistic: AUC ="
+    ,round(as.numeric(performance(test.logistic.pred,"auc")@y.values),4))
+    ,paste("Random Forest: AUC ="
+    ,round(as.numeric(performance(test.rocforest.prediction,"auc")@y.values),4))
+    ,paste("SVM: AUC ="
+    ,round(as.numeric(performance(test.rocsvm.prediction,"auc")@y.values),4))
+    ,paste("ANN: AUC ="
+    ,round(as.numeric(performance(test.rocann.prediction,"auc")@y.values),4)))
+    ,fill=(c("blue","red","green","grey")))
 dev.off()
 
 ################ All Models - Numeric Comparisons ###################
@@ -436,6 +450,10 @@ Rtest
 ############### All models ---- AIC / BIC ###############################
 aic.lr <- AIC(returns.lr)
 bic.lr <- BIC(returns.lr)
+aic.j48 <- AIC(returns_j48)
+bic.j48 <- BIC(returns_j48)
+aic.rf <- AIC(cforest.model) # doesn't work for RF
+bic.rf <- BIC(cforest.model) # same
 
 
 
