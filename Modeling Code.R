@@ -2,6 +2,10 @@
 library(ROCR)
 library(caret)
 library(neuralnet)
+library(party) # for KT's Random Forest syntax
+
+# Load orders.train post imputation and transformations
+load("~/CAPSTONE/imputedOrdersPostTransformation.rdata")
 
 # Models and ML Algorithms
 
@@ -115,22 +119,7 @@ summary(returns_j48)
 #--------------------#
 #   Random Forests   #
 #--------------------#
-# Get strange error message 
-
-library(randomForest)
-fit <- randomForest(returnShipment ~ color + timeToDeliver + accountAge 
-                    + customerAge + holidayFlag + bdayFlag + numItemsInOrder
-                    + manufRiskFlag + itemRiskFlag
-                      , data = train)
-print(fit) # view results
-importance(fit) # importance of each predictor 
-# we note variable x1 is most important, followed by x2, x3, and x4
-
-RFprediction <- predict(fit, test)
-confusionMatrix(RFprediction, test$returnShipment)
-
 # KT - Code from 412 week 5, need to update to current dataset
-################ Random Forest Model ###################
 # References for this section: 
 # http://www.stanford.edu/~stephsus/R-randomforest-guide.pdf
 # http://heuristically.wordpress.com/2009/12/18/plot-roc-curve-lift-chart-random-forest/
@@ -138,50 +127,70 @@ confusionMatrix(RFprediction, test$returnShipment)
 set.seed(498)
 pdf("RandomForestPlots.pdf")
 
-# fit a random forest model to training set
-data.controls <- cforest_unbiased(ntree=1000, mtry=7) #ntree should be increased from default of 500 based on number of predictors and datapoints, mtry default is 5, suggested is sqrt of predictors
-cforest.model <- cforest(class ~., data = working.train, controls=data.controls) 
+# The code crashed RStudio on me- trying with a much smaller sample to see if the syntax itself works
+sample_ind <- sample(seq_len(nrow(train)), size = 1000)
+train.sample <- train [sample_ind, ]
+
+# fit a random forest model to smaller training set
+data.controls <- cforest_unbiased(ntree=1000, mtry=5) #ntree should be increased from default of 500 based on number of predictors and datapoints, mtry default is 5, suggested is sqrt of predictors
+cforest.model <- cforest(returnShipment ~ color + timeToDeliver + accountAge 
+                         + customerAge + holidayFlag + bdayFlag + numItemsInOrder
+                         + manufRiskFlag + itemRiskFlag
+                         , data = train.sample, controls=data.controls) 
 
 # Variable importance - note this can also be done using randomForest as the library, but produces a dot plot
 data.cforest.varimp <- varimp(cforest.model)
-barplot(sort(data.cforest.varimp), horiz=T, xlab="Variable Importance in mydata",las=1,cex.names=0.5)
+barplot(sort(data.cforest.varimp), horiz=T, xlab="Variable Importance in Training",las=1,cex.names=0.5)
 abline(v=mean(data.cforest.varimp), col="red",lty="longdash", lwd=2)
 abline(v=median(data.cforest.varimp), col="blue", lwd=2)
 legend("bottomright",c("Mean","Median"),lty=c("longdash","solid"),col=c("red","blue"),lwd=c(2,2))
+# based on sample & settings, most important vars are itemRisk, numItems, and manufRisk
 
 # Use the model to predict.
-predict.forest.train <- predict(cforest.model)
-predict.forest.test <- predict(cforest.model, newdata = working.test)
+predict.forest.sample <- predict(cforest.model)
+#predict.forest.train <- predict(cforest.model)
+predict.forest.test <- predict(cforest.model, newdata = test)
 
-# Calculate the overall accuracy.
-train.forest.correct <- predict.forest.train == working.train$class
-test.forest.correct <- predict.forest.test == working.test$class
-
-print(paste("% of predicted classifications correct (Training):", mean(train.forest.correct)))
-print(paste("% of predicted classifications correct (Testing):", mean(test.forest.correct)))
-
-# Extract the class probabilities.
-train.forest.prob <- 1- unlist(treeresponse(cforest.model), use.names=F)[seq(1,nrow(working.train)*2,2)]
-test.forest.prob <- 1- unlist(treeresponse(cforest.model,newdata=working.test), use.names=F)[seq(1,nrow(working.test)*2,2)]
+# Borrowed CM syntax from LR above
+RFpredictions<-cut(predict.forest.sample, c(-Inf,0.5,Inf), labels=c("Keep","Return"))
+str(RFpredictions)
+summary(RFpredictions)
+RFactuals <- factor(train.sample$returnShipment,
+                    levels = c(0,1),
+                    labels = c("Keep", "Return"))
+confusionMatrix(RFpredictions,RFactuals)
 
 # Plot the performance of the model applied to the evaluation set as an ROC curve.
-train.rocforest.prediction <- prediction(train.forest.prob, working.train$class)
-test.rocforest.prediction <- prediction(test.forest.prob, working.test$class)
-train.rocforest <- performance(train.rocforest.prediction, "tpr","fpr")
+detach("package:neuralnet", unload=TRUE) # the prediction function of ROCR was getting overwritten
+sample.rocforest.prediction <- prediction(predict.forest.sample, train.sample[['returnShipment']])
+#train.rocforest.prediction <- prediction(predict.forest.train, train$returnShipment)
+test.rocforest.prediction <- prediction(predict.forest.test, test$returnShipment)
+
+sample.rocforest <- performance(sample.rocforest.prediction, "tpr","fpr")
+#train.rocforest <- performance(train.rocforest.prediction, "tpr","fpr")
 test.rocforest <- performance(test.rocforest.prediction, "tpr","fpr")
-plot(train.rocforest, col="blue", main = "ROC Random Forest")
+
+plot(sample.rocforest, col="green", main = "ROC Random Forest")
+#plot(train.rocforest, col="blue", main = "ROC Random Forest")
 plot(test.rocforest, col="red", add = TRUE)
 abline(c(0,1))
-legend("bottomright",c(paste("Training: AUC =",round(as.numeric(performance(train.rocforest.prediction,"auc")@y.values),4)),paste("Test: AUC =",round(as.numeric(performance(test.rocforest.prediction,"auc")@y.values),4))),fill=(c("blue","red")))
+legend("bottomright",c(paste("Sample: AUC ="
+        ,round(as.numeric(performance(sample.rocforest.prediction,"auc")@y.values),4))
+        ,paste("Test: AUC ="
+        ,round(as.numeric(performance(test.rocforest.prediction,"auc")@y.values),4)))
+        ,fill=(c("green","red")))
+#legend("bottomright",c(paste("Training: AUC =",round(as.numeric(performance(train.rocforest.prediction,"auc")@y.values),4)),paste("Test: AUC =",round(as.numeric(performance(test.rocforest.prediction,"auc")@y.values),4))),fill=(c("blue","red")))
 
 # And then a lift chart
-train.liftforest <- performance(train.rocforest.prediction, "lift","rpp")
+sample.liftforest <- performance(sample.rocforest.prediction, "lift","rpp")
+#train.liftforest <- performance(train.rocforest.prediction, "lift","rpp")
 test.liftforest <- performance(test.rocforest.prediction, "lift","rpp")
-plot(train.liftforest, col="blue", main = "Lift Curve Random Forest")
+plot(sample.liftforest, col="green", main = "Lift Curve Random Forest")
+#plot(train.liftforest, col="blue", main = "Lift Curve Random Forest")
 plot(test.liftforest, col="red", add = TRUE)
-legend("bottomleft",c("Training","Test"),fill=(c("blue","red")))
+legend("bottomleft",c("Sample","Test"),fill=(c("green","red")))
+#legend("bottomleft",c("Training","Test"),fill=(c("blue","red")))
 dev.off()
-
 
 #-----------------------------#
 #   Support Vector Machines   #

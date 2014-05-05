@@ -440,4 +440,4 @@ str(orders.train)
 # UK or US Manufacturer (indicator variable - based on sizing conventions)
 
 #Save command for after applying all the transformations
-#save(orders.train, file = "imputedOrdersPostTransformation.rdata")
+save(orders.train, file = "imputedOrdersPostTransformation.rdata")
