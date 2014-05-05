@@ -20,23 +20,11 @@ library(RWeka)
 library(corrgram)
 
 
-#------------------------#
-#  Train & Test Split    #
-#------------------------#
+#-------------------#
+#       EDA         #
+#-------------------#
 
-# Train/Test split (doing 70/30, based on number of orders)
-# Just writing out syntax here- probably makes more sense to put it after the EDA, though.
-# There's probably a more elegant way to do this but I just went with syntax I already know. Feel free to update.
-smp_size <- floor(0.7 * max(orders.train$orderID))
-set.seed(498)
-train_ind <- sample(seq_len(max(orders.train$orderID)), size = smp_size)
-orders.train$trainTest <- train_ind[orders.train$orderID]
-train <- orders.train[which(orders.train$trainTest>0), ]
-test <- orders.train[-which(orders.train$trainTest>0), ]
-remove(smp_size,train_ind)
-
-#------END TRAIN/TEST SPLIT-------#
-
+#----------BEAN PLOTS----------#
 
 # Look at PDF of numeric variables given reponse
 # Note that we're just using a random sample due to processing time for graphics
@@ -51,6 +39,9 @@ beanplot(timeToDeliver ~ returnShipment, orders.sample, side = "b", col = list("
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(price ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Price Distribution", xaxt="n")
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+
+#----------END BEAN PLOTS------#
+
 
 # Mean & count of response given nominal vars
 # Only doing ones with few possible values- salutation & state
@@ -77,14 +68,6 @@ dev.off()										##\/close pdf\/##
 
 # check how many observations for each variable have missing values
 sum(is.na(orders.train$variable_names))
-
-#--------------------------#
-#      Imputation???       #
-#--------------------------#
-# need to decide on imputation method: mice?, 
-
-
-
 
 
 # Time-series data - taking the mean of return aggregated by order date
@@ -143,7 +126,7 @@ remove(price0, price1, priceVector, p0, p1) #clean workspace
 shipTime <- orders.train$timeToDeliver
 ship0 <- subset(shipTime, orders.train$returnShipment==0)
 ship1 <- subset(shipTime, orders.train$returnShipment==1)
-ks.test(ship0,ship1) # statistically significant, minor separation
+ks.test(ship0,ship1) # statistically significant, very minor separation
 plot(ecdf(ship0), do.points=FALSE, verticals=T, xlab="Delivery Time", ylab="cumulative distribution", main="K-S Plot")
 lines(ecdf(ship1), lty=3, do.points=FALSE, verticals=T)
 remove(ship0, ship1, shipTime) #clean workspace
@@ -193,7 +176,6 @@ plot(ecdf(manRet0), do.points=FALSE, verticals=T, xlab="Return Frequency for Ite
 lines(ecdf(manRet1), lty=3, do.points=FALSE, verticals=T)
 remove(manRet0, manRet1, manRet) #clean workspace
 
-
 # Number of orders for a manufacturer
 manOrd <- orders.train$numManufOrders
 manOrd0 <- subset(manOrd, orders.train$returnShipment==0)
@@ -222,7 +204,7 @@ lines(ecdf(itemOrd1), lty=3, do.points=FALSE, verticals=T)
 remove(itemOrd0, itemOrd1, itemOrd) #clean workspace
 
 # Difference from the Mean Price for that item
-meanDif <- orders.train$diffFromMeanPrice
+meanDif <- orders.train$difFromMeanPrice
 meanDif0 <- subset(meanDif, orders.train$returnShipment==0)
 meanDif1 <- subset(meanDif, orders.train$returnShipment==1)
 ks.test(meanDif0, meanDif1) # statistically significant, minor - moderate separation
@@ -362,16 +344,6 @@ xyplot(jitter(sqrtprice) ~ jitter(carat) | channel + cut,
 #------------------------------------------------#
 
 # May need to add pruning rules for j48 and JRip #
-
-# to run j48 in RWeka
-returns_j48 <- J48(returnShipment~., data = train)
-returns_j48
-summary(returns_j48)
-
-# to add a 10-folds cross-validation (does it help?)
-eval_j48 <- evaluate_Weka_classifier(returns_j48, numFolds = 10, complexity = FALSE, 
-                                     seed = 1, class = TRUE)
-eval_j48
 
 # To run JRip - Recall this shows rules - will not plot a tree
 returns_JRip <- JRip(class ~., data = orders.train)
