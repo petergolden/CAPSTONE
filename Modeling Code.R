@@ -28,13 +28,14 @@ remove(smp_size,train_ind)
 
 #------END TRAIN/TEST SPLIT-------#
 
+remove(orders.train) # To clean workspace for 'hungry' algorithms
 
 #----------------------#
 #  Logistic Regression #
 #----------------------#
 # Look at Week 3 assignment of Predict 412
 
-# LR "Full Model"
+# LR "Specified Model"
 returns.lr <- glm(returnShipment ~ color + timeToDeliver 
                   + salutation + state
                   + accountAge + customerAge 
@@ -44,14 +45,16 @@ returns.lr <- glm(returnShipment ~ color + timeToDeliver
                   + numCustOrders + numCustReturns + custRiskFlag 
                   + numItemReturns + numItemOrders + itemRiskFlag
                   + numManufOrders + numManufReturns + manufRiskFlag,
-              family=binomial(link=logit), data=orders.train)
+              family=binomial(link=logit), data=train)
 summary(returns.lr)
+
+# To attempt Full Model...
+returns.lr.full <- glm(returnShipment~., family=binomial(link=logit), data=train)
 
 # Backwards elimination selection
 # use default AIC measure
-# eliminates variables X1 and X2....  
 # Note step function uses full model defined above 
-returns.backward <- step(returns.lr)
+returns.backward <- step(returns.lr.full)
 summary(returns.backward)
 
 
@@ -99,7 +102,14 @@ summary(test$returnShipment)
 
 confusionMatrix(predictions, test$returnShipment)
 
+str(predictions)
+str(test$returnShipment)
 
+#clean workspace for next algorithm
+remove(predict.test.logistic, predict.train.logistic, predictions, returns.lr, 
+       test.logistic.auc, test.logistic.pred, test.logistic.roc,
+       train.logistic.roc, train.logistic.pred, train.logistic.auc,
+       test.legend,train.legend)
 
 #------------------#
 #  Decision Trees  #
@@ -107,14 +117,52 @@ confusionMatrix(predictions, test$returnShipment)
 # J48 (based on Quinlan's C4.5)
 library(RWeka)
 # to run j48 in RWeka
-# Get an error that j48 cannot handle numeric class - do we have to convert to something else for this to work?
-returns_j48 <- J48(returnShipment ~ color + timeToDeliver + accountAge 
-                     + customerAge + holidayFlag + bdayFlag + numItemsInOrder
-                     + manufRiskFlag + itemRiskFlag
-                     , data = train)
+# Careful this takes a few minutes!
+remove(orders.train) # clean space
+# J48 cannot handle numeric class - have to convert to factor
+RS <- as.factor(train$returnShipment)
+returns_j48 <- J48(RS ~ color + timeToDeliver 
+                   + salutation + state
+                   + accountAge + customerAge 
+                   + holidayFlag + bdayFlag 
+                   + LetterSize + Pants + ChildSize + ShoeDress 
+                   + difFromMeanPrice + price  
+                   + numCustOrders + numCustReturns + custRiskFlag 
+                   + numItemReturns + numItemOrders + itemRiskFlag
+                   + numManufOrders + numManufReturns + manufRiskFlag,
+                   data=train)
 returns_j48
 summary(returns_j48)
 
+# WILL ROC WORK FOR J48? Do we need to use type='class' or 'probability'?
+# Keep getting error ' Format of labels is invalid.'
+predict.train.J48 <- predict(returns_j48, train, type="probability")
+predict.test.J48 <- predict(returns_j48, test, type="probability")
+
+train.J48.pred <- prediction(predict.train.J48, train$RS)
+train.J48.roc <- performance(train.J48.pred, "tpr","fpr")
+train.J48.auc <- (performance(train.J48.pred, "auc"))@y.values
+
+test.J48.pred <- prediction(predict.test.J48, test$RS)
+test.J48.roc <- performance(test.J48.pred, "tpr","fpr")
+test.J48.auc <- (performance(test.J48.pred, "auc"))@y.values
+
+# plot the selected model ROC curves
+pdf(file = "J48_model_ROC.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
+
+plot(train.J48.roc, col = "darkgreen", main = "ROC Curves for Logistic Regression Model")
+plot(test.J48.roc, col = "red",  add = TRUE)
+abline(c(0,1))
+# Draw a legend.
+train.legend <- paste("Train: AUC=", round(train.J48.auc[[1]], digits=3))
+test.legend <- paste("Test : AUC=", round(test.J48.auc[[1]], digits=3))
+legend(0.6, 0.5, c(train.legend,test.legend), c(3,2))
+dev.off()
+
+# to add a 10-folds cross-validation (does it help?)
+eval_j48 <- evaluate_Weka_classifier(returns_j48, numFolds = 10, complexity = FALSE, 
+                                     seed = 1, class = TRUE)
+eval_j48
 
 #--------------------#
 #   Random Forests   #
@@ -286,7 +334,7 @@ legend("bottomleft",c("Training","Test"),fill=(c("blue","red")))
 dev.off()
 
 #---------------------------------#
-#   Afrtifical Neural Networks    #
+#   Artifical Neural Networks    #
 #                                 #
 #             aka                 #
 #                                 #
