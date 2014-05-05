@@ -188,11 +188,13 @@ cforest.model <- cforest(returnShipment ~ color + timeToDeliver + accountAge
 
 # Variable importance - note this can also be done using randomForest as the library, but produces a dot plot
 data.cforest.varimp <- varimp(cforest.model)
-barplot(sort(data.cforest.varimp), horiz=T, xlab="Variable Importance in Training",las=1,cex.names=0.5)
+barplot(sort(data.cforest.varimp), horiz=T, xlab="Variable Importance in Training (vars to the rt of dotted line are sig)",las=1,cex.names=0.5)
 abline(v=mean(data.cforest.varimp), col="red",lty="longdash", lwd=2)
 abline(v=median(data.cforest.varimp), col="blue", lwd=2)
-legend("bottomright",c("Mean","Median"),lty=c("longdash","solid"),col=c("red","blue"),lwd=c(2,2))
+abline(v=abs(min(data.cforest.varimp)),col="black",lty="dotted",lwd=2)
+legend("bottomright",c("Mean","Median","| Min |"),lty=c("longdash","solid","dotted"),col=c("red","blue","black"),lwd=c(2,2,2))
 # based on sample & settings, most important vars are itemRisk, numItems, and manufRisk
+# the model doesn't appear stable though- the rest of the variables move around in importance
 
 # Use the model to predict.
 predict.forest.sample <- predict(cforest.model)
@@ -239,6 +241,13 @@ plot(test.liftforest, col="red", add = TRUE)
 legend("bottomleft",c("Sample","Test"),fill=(c("green","red")))
 #legend("bottomleft",c("Training","Test"),fill=(c("blue","red")))
 dev.off()
+
+#clean up everything other than the model itself
+remove(predict.forest.sample,predict.forest.test,data.cforest.varimp,data.controls,sample.liftforest,sample.rocforest
+       ,sample.rocforest.prediction,sample_ind,test.liftforest,test.rocforest,test.rocforest.prediction)
+
+# reload the neuralnet package so it's available for later syntax
+library(neuralnet)
 
 #-----------------------------#
 #   Support Vector Machines   #
