@@ -6,7 +6,7 @@ library(neuralnet)
 # Models and ML Algorithms
 
 summary(orders.train)
-
+load("imputedOrdersPostTransformation.rdata")
 #------------------------#
 #  Train & Test Split    #
 #------------------------#
@@ -325,17 +325,17 @@ covList = c("color", "timeToDeliver", "salutation", "state", "accountAge",
             "ChildSize", "ShoeDress", "difFromMeanPrice", "price", "numCustOrders",
             "numCustReturns", "custRiskFlag", "numItemReturns", "numItemOrders",
             "itemRiskFlag", "numManufOrders", "numManufReturns", "manufRiskFlag")
+#Need to fix the column names so we can use them ase variable inputs into our formula
+colnames(designMatrix)[19] <- "salutationnotreported"
+colnames(designMatrix)[26] <- "stateLowerSaxony"
+colnames(designMatrix)[27] <- "stateMecklenburgWesternPomerania"
+colnames(designMatrix)[28] <- "stateNorthRhineWestphalia"
+colnames(designMatrix)[29] <- "stateRhinelandPalatinate"
+colnames(designMatrix)[32] <- "stateSaxonyAnhalt"
+colnames(designMatrix)[33] <- "stateSchleswigHolstein"
 
-nn <- neuralnet(returnShipment ~ color + timeToDeliver 
-                + salutation + state
-                + accountAge + customerAge 
-                + holidayFlag + bdayFlag 
-                + LetterSize + Pants + ChildSize + ShoeDress 
-                + difFromMeanPrice + price  
-                + numCustOrders + numCustReturns + custRiskFlag 
-                + numItemReturns + numItemOrders + itemRiskFlag
-                + numManufOrders + numManufReturns + manufRiskFlag,
-                data = simpleDesignMatrix, hidden=1, threshold=0.01,
+nnformula <- as.formula(paste("returnShipment ~ ", paste(colnames(designMatrix[,-1:-2]),collapse ="+")))
+nn <- neuralnet( nnformula, data = designMatrix[1:200000,], hidden=1, threshold=0.01,
                 linear.output = FALSE, likelihood = TRUE )
 
 simpleResults <- compute(nn, test[, covList])
