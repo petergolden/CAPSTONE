@@ -126,6 +126,8 @@ orders.train$sizeLowRisk <- orders.train$size == 'unsized'
 orders.missing <- orders.train[!complete.cases(orders.train),c(-2,-3,-5,-13) ]
 orders.complete <- orders.train[complete.cases(orders.impute),c(-2,-3,-5,-13)]
 
+# JB gets this error: Error in complete.cases(orders.impute) : object 'orders.impute' not found
+
 set.seed(2000)
 #Need 54567 more observations to impute on
 orders.impute <- rbind(orders.missing, orders.complete[sample(nrow(orders.complete),size = 54567),])
@@ -162,6 +164,12 @@ orders.train <- orders.train[,1:16]
 # WARNING! This will overwrite your environments current version of orders.train
 #test <- load("ImputedOrders.RData")
 
+#------------------ END IMPUTATION-----------------#
+
+
+#---------------------------#
+#    More Transformations   #
+#---------------------------#
 
 # Add date diff variables
 # Time from when order was placed to delivery, in days
@@ -440,4 +448,4 @@ str(orders.train)
 # UK or US Manufacturer (indicator variable - based on sizing conventions)
 
 #Save command for after applying all the transformations
-#save(orders.train, file = "imputedOrdersPostTransformation.rdata")
+save(orders.train, file = "imputedOrdersPostTransformation.rdata")

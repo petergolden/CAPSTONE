@@ -20,23 +20,11 @@ library(RWeka)
 library(corrgram)
 
 
-#------------------------#
-#  Train & Test Split    #
-#------------------------#
+#-------------------#
+#       EDA         #
+#-------------------#
 
-# Train/Test split (doing 70/30, based on number of orders)
-# Just writing out syntax here- probably makes more sense to put it after the EDA, though.
-# There's probably a more elegant way to do this but I just went with syntax I already know. Feel free to update.
-smp_size <- floor(0.7 * max(orders.train$orderID))
-set.seed(498)
-train_ind <- sample(seq_len(max(orders.train$orderID)), size = smp_size)
-orders.train$trainTest <- train_ind[orders.train$orderID]
-train <- orders.train[which(orders.train$trainTest>0), ]
-test <- orders.train[-which(orders.train$trainTest>0), ]
-remove(smp_size,train_ind)
-
-#------END TRAIN/TEST SPLIT-------#
-
+#----------BEAN PLOTS----------#
 
 # Look at PDF of numeric variables given reponse
 # Note that we're just using a random sample due to processing time for graphics
@@ -51,6 +39,9 @@ beanplot(timeToDeliver ~ returnShipment, orders.sample, side = "b", col = list("
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(price ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Price Distribution", xaxt="n")
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+
+#----------END BEAN PLOTS------#
+
 
 # Mean & count of response given nominal vars
 # Only doing ones with few possible values- salutation & state
@@ -77,14 +68,6 @@ dev.off()										##\/close pdf\/##
 
 # check how many observations for each variable have missing values
 sum(is.na(orders.train$variable_names))
-
-#--------------------------#
-#      Imputation???       #
-#--------------------------#
-# need to decide on imputation method: mice?, 
-
-
-
 
 
 # Time-series data - taking the mean of return aggregated by order date
@@ -134,6 +117,8 @@ p0 <- sort(price0)
 price1 <- subset(priceVector, orders.train$returnShipment==1)
 p1 <- sort(price1)
 ks.test(p0,p1) # statistically significant, moderate - large separation
+plot(ecdf(price0), do.points=FALSE, verticals=T, xlab="price", ylab="cumulative distribution", main="K-S Plot")
+lines(ecdf(price1), lty=3, do.points=FALSE, verticals=T)
 remove(price0, price1, priceVector, p0, p1) #clean workspace
 
 # Delivery Time
@@ -141,23 +126,27 @@ remove(price0, price1, priceVector, p0, p1) #clean workspace
 shipTime <- orders.train$timeToDeliver
 ship0 <- subset(shipTime, orders.train$returnShipment==0)
 ship1 <- subset(shipTime, orders.train$returnShipment==1)
-ks.test(ship0,ship1) # statistically significant, minor separation
+ks.test(ship0,ship1) # statistically significant, very minor separation
+plot(ecdf(ship0), do.points=FALSE, verticals=T, xlab="Delivery Time", ylab="cumulative distribution", main="K-S Plot")
+lines(ecdf(ship1), lty=3, do.points=FALSE, verticals=T)
 remove(ship0, ship1, shipTime) #clean workspace
 
 # Looks like we don't have to rank vectors, ks.test does that for us - yay!
-shipTime <- orders.train$timeToDeliver
-ship0 <- subset(shipTime, orders.train$returnShipment==0)
-s0 <- sort(ship0)
-ship1 <- subset(shipTime, orders.train$returnShipment==1)
-s1 <- sort(ship1)
-ks.test(s0,s1) # statistically significant, minor separation
-remove(ship0, ship1, shipTime, s0, s1) #clean workspace
+# shipTime <- orders.train$timeToDeliver
+# ship0 <- subset(shipTime, orders.train$returnShipment==0)
+# s0 <- sort(ship0)
+# ship1 <- subset(shipTime, orders.train$returnShipment==1)
+# s1 <- sort(ship1)
+# ks.test(s0,s1) # statistically significant, minor separation
+# remove(ship0, ship1, shipTime, s0, s1) #clean workspace
 
 # Age of Account
 acctAge <- orders.train$accountAge
 acctAge0 <- subset(acctAge, orders.train$returnShipment==0)
 acctAge1 <- subset(acctAge, orders.train$returnShipment==1)
 ks.test(acctAge0, acctAge1) # statistically significant, very little separation, though
+plot(ecdf(acctAge0), do.points=FALSE, verticals=T, xlab="Age of Account", ylab="cumulative distribution", main="K-S Plot")
+lines(ecdf(acctAge1), lty=3, do.points=FALSE, verticals=T)
 remove(acctAge0, acctAge1, acctAge) #clean workspace
 
 # Age of Customer
@@ -165,6 +154,8 @@ custAge <- orders.train$customerAge
 custAge0 <- subset(custAge, orders.train$returnShipment==0)
 custAge1 <- subset(custAge, orders.train$returnShipment==1)
 ks.test(custAge0, custAge1) # statistically significant, minor separation
+plot(ecdf(custAge0), do.points=FALSE, verticals=T, xlab="Age of Customer", ylab="cumulative distribution", main="K-S Plot")
+lines(ecdf(custAge1), lty=3, do.points=FALSE, verticals=T)
 remove(custAge0, custAge1, custAge) #clean workspace
 
 # Number of Items in that day's order - proxy for basket size
@@ -172,6 +163,8 @@ numItems <- orders.train$numItemsInOrder
 numItems0 <- subset(numItems, orders.train$returnShipment==0)
 numItems1 <- subset(numItems, orders.train$returnShipment==1)
 ks.test(numItems0, numItems1) # statistically significant, moderate - large separation
+plot(ecdf(numItems0), do.points=FALSE, verticals=T, xlab="Number of Items in 'Basket'", ylab="cumulative distribution", main="K-S Plot")
+lines(ecdf(numItems1), lty=3, do.points=FALSE, verticals=T)
 remove(numItems0, numItems1, custAge) #clean workspace
 
 # Frequency of returns for that manufacturer
@@ -179,14 +172,17 @@ manRet <- orders.train$numManufReturns
 manRet0 <- subset(manRet, orders.train$returnShipment==0)
 manRet1 <- subset(manRet, orders.train$returnShipment==1)
 ks.test(manRet0, manRet1) # statistically significant, moderate - large separation
+plot(ecdf(manRet0), do.points=FALSE, verticals=T, xlab="Return Frequency for Item Manufacturer", ylab="cumulative distribution", main="K-S Plot")
+lines(ecdf(manRet1), lty=3, do.points=FALSE, verticals=T)
 remove(manRet0, manRet1, manRet) #clean workspace
-
 
 # Number of orders for a manufacturer
 manOrd <- orders.train$numManufOrders
 manOrd0 <- subset(manOrd, orders.train$returnShipment==0)
 manOrd1 <- subset(manOrd, orders.train$returnShipment==1)
 ks.test(manOrd0, manOrd1) # statistically significant, minor separation
+plot(ecdf(manOrd0), do.points=FALSE, verticals=T, xlab="Number of Items Sold for that Manufacturer", ylab="cumulative distribution", main="K-S Plot")
+lines(ecdf(manOrd1), lty=3, do.points=FALSE, verticals=T)
 remove(manOrd0, manOrd1, manOrd) #clean workspace
 
 # Frequency of returns for item ordered
@@ -194,6 +190,8 @@ itemRet <- orders.train$numItemReturns
 itemRet0 <- subset(itemRet, orders.train$returnShipment==0)
 itemRet1 <- subset(itemRet, orders.train$returnShipment==1)
 ks.test(itemRet0, itemRet1) # statistically significant, VERY large separation
+plot(ecdf(itemRet0), do.points=FALSE, verticals=T, xlab="Return Frequency for Item", ylab="cumulative distribution", main="K-S Plot")
+lines(ecdf(itemRet1), lty=3, do.points=FALSE, verticals=T)
 remove(itemRet0, itemRet1, itemRet) #clean workspace
 
 # Number of orders for item ordered
@@ -201,13 +199,17 @@ itemOrd <- orders.train$numItemOrders
 itemOrd0 <- subset(itemOrd, orders.train$returnShipment==0)
 itemOrd1 <- subset(itemOrd, orders.train$returnShipment==1)
 ks.test(itemOrd0, itemOrd1) # statistically significant, minor - moderate separation
+plot(ecdf(itemOrd0), do.points=FALSE, verticals=T, xlab="Number of Items Sold for that ItemID", ylab="cumulative distribution", main="K-S Plot")
+lines(ecdf(itemOrd1), lty=3, do.points=FALSE, verticals=T)
 remove(itemOrd0, itemOrd1, itemOrd) #clean workspace
 
 # Difference from the Mean Price for that item
-meanDif <- orders.train$diffFromMeanPrice
+meanDif <- orders.train$difFromMeanPrice
 meanDif0 <- subset(meanDif, orders.train$returnShipment==0)
 meanDif1 <- subset(meanDif, orders.train$returnShipment==1)
 ks.test(meanDif0, meanDif1) # statistically significant, minor - moderate separation
+plot(ecdf(meanDif0), do.points=FALSE, verticals=T, xlab="Difference from Item Price Mean", ylab="cumulative distribution", main="K-S Plot")
+lines(ecdf(meanDif1), lty=3, do.points=FALSE, verticals=T)
 remove(meanDif0, meanDif1, meanDif) #clean workspace
 
 # Frequency of returns for that Customer
@@ -215,6 +217,8 @@ custRet <- orders.train$numCustReturns
 custRet0 <- subset(custRet, orders.train$returnShipment==0)
 custRet1 <- subset(custRet, orders.train$returnShipment==1)
 ks.test(custRet0, custRet1) # statistically significant, GARGANTUAN SEPARATION
+plot(ecdf(custRet0), do.points=FALSE, verticals=T, xlab="Return Frequency for Customer", ylab="cumulative distribution", main="K-S Plot")
+lines(ecdf(custRet1), lty=3, do.points=FALSE, verticals=T)
 remove(custRet0, custRet1, custRet) #clean workspace
 
 # Number of orders for that Customer
@@ -222,6 +226,8 @@ custOrd <- orders.train$numCustOrders
 custOrd0 <- subset(custOrd, orders.train$returnShipment==0)
 custOrd1 <- subset(custOrd, orders.train$returnShipment==1)
 ks.test(custOrd0, custOrd1) # statistically significant, minor separation
+plot(ecdf(custOrd0), do.points=FALSE, verticals=T, xlab="Total Number of Items Purchased for given Customer", ylab="cumulative distribution", main="K-S Plot")
+lines(ecdf(custOrd1), lty=3, do.points=FALSE, verticals=T)
 remove(custOrd0, custOrd1, custOrd) #clean workspace
 
 
@@ -338,16 +344,6 @@ xyplot(jitter(sqrtprice) ~ jitter(carat) | channel + cut,
 #------------------------------------------------#
 
 # May need to add pruning rules for j48 and JRip #
-
-# to run j48 in RWeka
-returns_j48 <- J48(returnShipment~., data = train)
-returns_j48
-summary(returns_j48)
-
-# to add a 10-folds cross-validation (does it help?)
-eval_j48 <- evaluate_Weka_classifier(returns_j48, numFolds = 10, complexity = FALSE, 
-                                     seed = 1, class = TRUE)
-eval_j48
 
 # To run JRip - Recall this shows rules - will not plot a tree
 returns_JRip <- JRip(class ~., data = orders.train)
