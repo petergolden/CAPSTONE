@@ -36,10 +36,6 @@ remove(orders.train) # To clean workspace for 'hungry' algorithms
 # Look at Week 3 assignment of Predict 412
 
 str(train)
-train$creationDate
-
-train$numItemsInOrder
-train$numItemID
 
 #------ LR "Specified Model"----------#
 returns.lr <- glm(returnShipment ~ color + timeToDeliver 
@@ -199,9 +195,12 @@ remove(predict.test.logistic, predict.train.logistic, predictions, returns.lr,
        train.logistic.roc, train.logistic.pred, train.logistic.auc,
        test.legend,train.legend)
 
-#------------------#
-#  Decision Trees  #
-#------------------#
+#-----------------------END LOGISTIC REGRESSION-----------------------#
+
+
+#---------------------------------#
+#         Decision Trees          #
+#---------------------------------#
 # J48 (based on Quinlan's C4.5)
 library(RWeka)
 # to run j48 in RWeka
@@ -238,7 +237,7 @@ test.J48.auc <- (performance(test.J48.pred, "auc"))@y.values
 # plot the selected model ROC curves
 pdf(file = "J48_model_ROC.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
 
-plot(train.J48.roc, col = "darkgreen", main = "ROC Curves for Logistic Regression Model")
+plot(train.J48.roc, col = "darkgreen", main = "ROC Curves for J48 Tree")
 plot(test.J48.roc, col = "red",  add = TRUE)
 abline(c(0,1))
 # Draw a legend.

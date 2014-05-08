@@ -51,8 +51,12 @@ summaryBy(returnShipment ~ state, orders.train, FUN=c(length,mean))
 # More EDA - a breakout of stats by returnShipment
 describeBy(orders.train, group=orders.train$returnShipment, mat=FALSE, type=3, digits=6)
 
+
+# XY Plots
 # quick X vs Y plot
 plot(orders.sample, cex=0.1)
+
+
 
 #--------------------------#
 # DEAL WITH MISSING VALUES #
@@ -267,27 +271,33 @@ dev.off()
 # lattice plots for key explanatory variables
 # Shows X&Y relationship by class - Can use for EDA or after algorithm returns top vars
 # But I think this may help identify interaction effects
+library(lattice) # required for the xyplot() function
 
+plot(, )
 
 # this is just a template for integration #
-xyplot(Flav ~ Color | class, 
-       data = wine,        
+xyplot(numManufReturns ~ numCustReturns | returnShipment, 
+       data = orders.train,        
        layout = c(6, 1),
        aspect=1,
        strip=function(...) strip.default(..., style=1),
-       xlab = "Flavanoids", 
-       ylab = "Color Intensity")
+xlab = "Number of returns by Customer", 
+ylab = "Number of returns by Manufacturer")
 
-# Along same lines, we can look at scatterplots
+# Along same lines, we can look at scatterplots - need car library
+library(car)
 # The larger graphs with the overlay 
 # make the relationships a bit more visible
 # this is by class
-scatterplot(Flav ~ Color | class, data=wine, boxplots=FALSE, 
+# boxes are too small; size adjustment?
+scatterplot(numManufReturns ~ numCustReturns | returnShipment, data=orders.train, boxplots=FALSE, 
             span=0.75, col=gray(c(0,0.5,0.7)),id.n=0)
 
 # this is just X vs. Y.  We can adjust for any specific variable comparisons we want to look at
-scatterplot(carat ~ price, data=diamonds, boxplots=FALSE, 
+scatterplot(numManufReturns ~ numCustReturns, data=orders.train, boxplots=FALSE, 
             span=0.75,id.n=0)
+
+
 
 # Numeric fields for sample scatterplot
 orders.numeric <- orders.sample[c("price","timeToDeliver","accountAge","customerAge","numItemOrders","numItemID")]
