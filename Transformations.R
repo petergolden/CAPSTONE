@@ -6,7 +6,9 @@ library(mice)
 library(plyr)
 # Read in data from GitHub
 orders.train <- read.table("orders_train.txt", header = TRUE, sep = ";")
+orders.class <- read.table("orders_class.txt", header = TRUE, sep = "\t")
 
+orders.train <- orders.class
 #Read in our color mapping
 colorMap <- read.table("Color mapping.csv", header = TRUE, sep = ",", as.is = TRUE)
 
@@ -20,6 +22,12 @@ orders.train$orderDate <- as.Date(orders.train$orderDate, format = "%Y-%m-%d")
 orders.train$deliveryDate <- as.Date(orders.train$deliveryDate, format = "%Y-%m-%d")
 orders.train$dateOfBirth <- as.Date(orders.train$dateOfBirth, format = "%Y-%m-%d")
 orders.train$creationDate <- as.Date(orders.train$creationDate, format = "%Y-%m-%d")
+
+# The class file has a different format, so use the following lines
+orders.train$orderDate <- as.Date(orders.train$orderDate, format = "%m/%d/%Y")
+orders.train$deliveryDate <- as.Date(orders.train$deliveryDate, format = "%m/%d/%Y")
+orders.train$dateOfBirth <- as.Date(orders.train$dateOfBirth, format = "%m/%d/%Y")
+orders.train$creationDate <- as.Date(orders.train$creationDate, format = "%m/%d/%Y")
 
 
 #--------------------#
@@ -112,11 +120,6 @@ orders.train$salutation[orders.train$salutation =="not reported"] <- NA
 #Rows with missing delivery dates we are assuming were not delivered, take them out
 orders.train <- orders.train[!(is.na(orders.train$deliveryDate)),]
 
-#Identify 'high risk' and 'low risk' sizes
-orders.train$sizeHighRisk <- orders.train$size == '40' | orders.train$size == '41'  | orders.train$size == '42'
-orders.train$sizeLowRisk <- orders.train$size == 'unsized' 
-
-
 #Mice is unable to impute on entire dataset (too many observations, becomes singular)
 #So taking a subset of 100,000 observations (including those with missing observations)
 #to perform imputation on
@@ -124,14 +127,17 @@ orders.train$sizeLowRisk <- orders.train$size == 'unsized'
 #lets copy this data over so we don't mess with the original
 #size has 122 levels, imputing using it is going to be a mess, we'll omit
 orders.missing <- orders.train[!complete.cases(orders.train),c(-2,-3,-5,-13) ]
-orders.complete <- orders.train[complete.cases(orders.impute),c(-2,-3,-5,-13)]
+orders.complete <- orders.train[complete.cases(orders.train),c(-2,-3,-5,-13)]
 
 # JB gets this error: Error in complete.cases(orders.impute) : object 'orders.impute' not found
 
 set.seed(2000)
-#Need 54567 more observations to impute on
+#Need 54567 more observations to impute on for train file
 orders.impute <- rbind(orders.missing, orders.complete[sample(nrow(orders.complete),size = 54567),])
   
+#For the class file, just impute on everything
+orders.impute <- rbind( orders.missing, orders.complete )
+
 #MICE doesn't like the date format, so let's change to numeric...
 #orders.impute$orderDate <- as.numeric(orders.impute$orderDate)
 #orders.impute$deliveryDate <- as.numeric(orders.impute$deliveryDate)
@@ -151,21 +157,23 @@ orders.train <- merge( orders.train, imputedData, by.x = "orderItemID",
 orders.train[is.na(orders.train$color), "color"] <-  orders.train[is.na(orders.train$color), "color.y"]
 orders.train[is.na(orders.train$salutation), "salutation"] <-  orders.train[is.na(orders.train$salutation), "salutation.y"]
 orders.train[is.na(orders.train$dateOfBirth), "dateOfBirth"] <-  orders.train[is.na(orders.train$dateOfBirth), "dateOfBirth.y"]
-summary(orders.train$color)
+summary(orders.train$dateOfBirth)
 
 #Get rid of the extra merged columns
 orders.train <- orders.train[,1:16]
 
+orders.class.Imputed <- orders.train
+
 #write imputed date to file
 # WARNING --- This will over-write the currently saved imputed data! 
 #save(orders.train, file = "ImputedOrders.RData")
-
+save(orders.class.Imputed, file = "orders_class_Imputed.rdata")
 #This will load the imputed version of orders.train
 # WARNING! This will overwrite your environments current version of orders.train
 #test <- load("ImputedOrders.RData")
 
 #------------------ END IMPUTATION-----------------#
-
+orders.train <- orders.class.Imputed
 
 #---------------------------#
 #    More Transformations   #
@@ -204,6 +212,11 @@ ggplot(orders.train,aes(x=accountAge)) + geom_density(fill="grey") + ggtitle("Ac
 #----------------------------------------#
 #   Transformation code applied to Size  #
 #----------------------------------------#
+
+#Identify 'high risk' and 'low risk' sizes
+orders.train$sizeHighRisk <- orders.train$size == '40' | orders.train$size == '41'  | orders.train$size == '42'
+orders.train$sizeLowRisk <- orders.train$size == 'unsized' 
+
 
 # Sizing recodes - creating a table with frequencies to work from and going to remove sizes as I recode them
 # There may be some errors here- for example, Euro children's sizes start at 50, but some conversions go up to size 52 for men's suits, etc
@@ -322,7 +335,7 @@ View(orders.train[which(orders.train$bdayFlag==1 & (as.character(orders.train$or
 # Add number of items per order
 numItems <- summaryBy(orderItemID ~ customerID + orderDate, orders.train, FUN=length)
 names(numItems) <- c("customerID","orderDate","numItemsInOrder")
-orders.train <- merge(orders.train,numItems,by=c("customerID","orderDate"))
+orders.train <- merge(orders.train,numItems,by=c("customerID","orderDate"),all.x=TRUE)
 # Add num items with that items ID per order
 # Also looking at number of returns since we expect higher returns if they order dups
 dupItems <- summaryBy(returnShipment ~ customerID + orderDate + itemID, orders.train, FUN=c(length,sum))
@@ -334,6 +347,9 @@ orders.train <- merge(orders.train,dupItems[1:4],by=c("customerID","orderDate","
 # Dropping unnecessary data frames
 remove(numItems,dupItems)
 
+orders.class.Imputed.mid <- orders.train
+orders.class.Imputed.temp <- orders.class.Imputed.mid
+load("imputedOrdersPostTransformation.rdata")
 # Find high risk manufacturers/items/customers
 # Do we want to only include ones that had a certain number of items ordered? 
 # I picked 50 as a cutoff, but that's arbitrary; could use median or a percentile
@@ -347,7 +363,10 @@ riskyManuf$manufRiskFlag <- ifelse(riskyManuf$returnShipment.length>=50 & riskyM
 names(riskyManuf) <- c("manufacturerID","numManufOrders","numManufReturns","manufRiskFlag")
 # Merge
 orders.train <- merge(orders.train,riskyManuf,by="manufacturerID")
-    # Items
+orders.class.Imputed.mid <- merge(orders.class.Imputed.temp,riskyManuf,
+                                   all.x = TRUE, by="manufacturerID")
+
+# Items
 riskyItems <- summaryBy(returnShipment ~ itemID,orders.train,FUN=c(length,mean))
 summary(riskyItems$returnShipment.mean)
 summary(riskyItems$returnShipment.length)
@@ -357,7 +376,9 @@ riskyItems$itemRiskFlag <- ifelse(riskyItems$returnShipment.length>=50 & riskyIt
 names(riskyItems) <- c("itemID","numItemOrders","numItemReturns","itemRiskFlag")
 # Merge
 orders.train <- merge(orders.train,riskyItems,by="itemID")
-    # Customers
+orders.class.Imputed.temp <- merge(orders.class.Imputed.temp,riskyItems,
+                                   all.x = TRUE, by="itemID")
+# Customers
 riskyCust <- summaryBy(returnShipment ~ customerID,orders.train,FUN=c(length,mean))
 summary(riskyCust$returnShipment.mean)
 summary(riskyCust$returnShipment.length)
@@ -367,6 +388,10 @@ riskyCust$custRiskFlag <- ifelse(riskyCust$returnShipment.length>=50 & riskyCust
 names(riskyCust) <- c("customerID","numCustOrders","numCustReturns","custRiskFlag")
 # Merge & clear workspace
 orders.train <- merge(orders.train,riskyCust,by="customerID")
+orders.class.Imputed.temp <- merge(orders.class.Imputed.temp,riskyCust,
+                                   all.x = TRUE, by="customerID")
+
+
 remove(riskyManuf,riskyItems,riskyCust)
 
 # Check if items are always the same price (expect they're not, but wanted to verify before coding more)
@@ -377,6 +402,12 @@ View(itemPricing) # confirmed, going to attach to the orders.train data frame so
 orders.train <- merge(orders.train, itemPricing, by="itemID")
 orders.train$difFromMeanPrice = orders.train$price - orders.train$price.mean
 remove(itemPricing)
+
+itemPricing <- merge(summaryBy(price ~ itemID,orders.class.Imputed.temp,FUN=quantile),
+                     summaryBy(price ~ itemID,orders.class.Imputed.temp,FUN=mean),by="itemID")
+orders.class.Imputed.temp <- merge(orders.class.Imputed.temp, itemPricing, by="itemID" )
+orders.class.Imputed.temp$difFromMeanPrice = orders.class.Imputed.temp$price - orders.class.Imputed.temp$price.mean
+
 # Look at mean of returnShipment for each price point
 # Currently saving this out as a separate table because I'm not entirely sure what to do with it
 returnsByPrice <- summaryBy(returnShipment ~ itemID + price, orders.train, FUN=c(length,mean))
@@ -388,7 +419,7 @@ orders.table <- orders.table[,-3]
 orders.train <- merge(orders.train,orders.table,by=c("customerID","orderDate"))
 remove(orders.table)
 
-
+orders.class.Imputed <- orders.class.Imputed.temp
 str(orders.train)
 
 # -------------------------------------------- #
@@ -448,4 +479,8 @@ str(orders.train)
 # UK or US Manufacturer (indicator variable - based on sizing conventions)
 
 #Save command for after applying all the transformations
-save(orders.train, file = "imputedOrdersPostTransformation.rdata")
+
+#The "most transforms" represents that I'm not sure how to 
+#get the dupItems variable implemented along with the orderID, everything else
+#should be in there.
+save(orders.class.Imputed, file = "orders_class_Imputed_most_transforms.rdata")
