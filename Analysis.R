@@ -237,6 +237,50 @@ remove(custOrd0, custOrd1, custOrd) #clean workspace
 
 #------------End KS----------------#
 
+#------------------------#
+#     Correlation        #
+#------------------------#
+
+library(Hmisc)
+
+# included in LR BE
+rcorr(orders.train$returnShipment, orders.train$color, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$timeToDeliver, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$salutation, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$accountAge, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$holidayFlag, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$LetterSize, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$ChildSize, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$ShoeDress, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$sizeHighRisk, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$sizeLowRisk, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$difFromMeanPrice, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$price, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$numItemsInOrder, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$numCustOrders, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$numCustReturns, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$custRiskFlag, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$numItemReturns, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$numItemOrders, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$numManufOrders, type="pearson")
+
+# Uh Oh - we seem to have the undelivereds here...
+length(orders.train$timeToDeliver)
+summary(orders.train$timeToDeliver)
+length(orders.train$returnShipment)
+summary(orders.train$returnShipment)
+
+# excluded from LR BE
+rcorr(orders.train$returnShipment, orders.train$itemRiskFlag, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$manufRiskFlag, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$bdayFlag, type="pearson") # Not statistically significant
+rcorr(orders.train$returnShipment, orders.train$Pants, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$LetterSize, type="pearson")
+rcorr(orders.train$returnShipment, orders.train$state, type="pearson") # Not statistically significant
+
+
+cor(orders.train$returnShipment, orders.train$timeToDeliver)
+
 # Plot Histograms for all variables by class
 # will need to sub in our data names #
 
