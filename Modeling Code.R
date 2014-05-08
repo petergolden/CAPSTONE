@@ -35,7 +35,13 @@ remove(orders.train) # To clean workspace for 'hungry' algorithms
 #----------------------#
 # Look at Week 3 assignment of Predict 412
 
-# LR "Specified Model"
+str(train)
+train$creationDate
+
+train$numItemsInOrder
+train$numItemID
+
+#------ LR "Specified Model"----------#
 returns.lr <- glm(returnShipment ~ color + timeToDeliver 
                   + salutation + state
                   + accountAge + customerAge 
@@ -47,16 +53,6 @@ returns.lr <- glm(returnShipment ~ color + timeToDeliver
                   + numManufOrders + numManufReturns + manufRiskFlag,
               family=binomial(link=logit), data=train)
 summary(returns.lr)
-
-# To attempt Full Model...
-returns.lr.full <- glm(returnShipment~., family=binomial(link=logit), data=train)
-
-# Backwards elimination selection
-# use default AIC measure
-# Note step function uses full model defined above 
-returns.backward <- step(returns.lr.full)
-summary(returns.backward)
-
 
 # TO Get ROC Curves
 # get predictions from model 
@@ -72,7 +68,7 @@ test.logistic.pred <- prediction(predict.test.logistic, test$returnShipment)
 test.logistic.roc <- performance(test.logistic.pred, "tpr","fpr")
 test.logistic.auc <- (performance(test.logistic.pred, "auc"))@y.values
 
-# plot the full model ROC curves
+# plot the model ROC curves
 pdf(file = "LR_model_ROC.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
 
 plot(train.logistic.roc, col = "darkgreen", main = "ROC Curves for Logistic Regression Model")
@@ -85,6 +81,98 @@ legend(0.6, 0.5, c(train.legend,test.legend), c(3,2))
 dev.off()
 
 str(predict.test.logistic) 
+
+
+# ----------------LR "Full Model" ----------------------------#
+# Had to add variables manually as I was getting an error just using returnShipment~.
+# Also realized some variables, particularly date vaiables and ID number variables (in number format)
+# did not really behave like continuous variables
+# or variables where value on a continuum was meaningful
+# Didn't want spurious results so eliminated those first
+# careful here - full model sucks resources
+# I think there are multicollinearity issues here
+# Let's see how BE goes, but we might need to do some manual manipulation 
+# CustomerAge has some NA's - need to check impute for this variable
+returns.full.lr <- glm(returnShipment ~ color + timeToDeliver 
+                  + salutation + state
+                  + accountAge 
+                  + holidayFlag + bdayFlag 
+                  + LetterSize + Pants + ChildSize + ShoeDress + sizeHighRisk + sizeLowRisk
+                  + difFromMeanPrice + price  
+                  + numItemsInOrder
+                  + numCustOrders + numCustReturns + custRiskFlag 
+                  + numItemReturns + numItemOrders + itemRiskFlag
+                  + numManufOrders + numManufReturns + manufRiskFlag,
+                  family=binomial(link=logit), data=train)
+summary(returns.full.lr)
+
+# generate ROC on FULL MODEL
+predict.train.logistic <- predict(returns.full.lr, train, type="response")
+predict.test.logistic <- predict(returns.full.lr, test, type="response")
+
+train.logistic.pred <- prediction(predict.train.logistic, train$returnShipment)
+train.logistic.roc <- performance(train.logistic.pred, "tpr","fpr")
+train.logistic.auc <- (performance(train.logistic.pred, "auc"))@y.values
+
+test.logistic.pred <- prediction(predict.test.logistic, test$returnShipment)
+test.logistic.roc <- performance(test.logistic.pred, "tpr","fpr")
+test.logistic.auc <- (performance(test.logistic.pred, "auc"))@y.values
+
+# plot the full model ROC curves
+pdf(file = "LR_model_Full_ROC.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
+
+plot(train.logistic.roc, col = "darkgreen", main = "ROC Curves for Logistic Regression Model")
+plot(test.logistic.roc, col = "red",  add = TRUE)
+abline(c(0,1))
+# Draw a legend.
+train.legend <- paste("Train: AUC=", round(train.logistic.auc[[1]], digits=3))
+test.legend <- paste("Test : AUC=", round(test.logistic.auc[[1]], digits=3))
+legend(0.6, 0.5, c(train.legend,test.legend), c(3,2))
+dev.off()
+
+
+#---------- Backwards elimination selection-----------#
+# use default AIC measure
+# Note step function uses full model defined above 
+returns.backward.lr <- step(returns.full.lr)
+summary(returns.backward.lr)
+
+
+# TO Get ROC Curves
+# get predictions from model 
+predict.train.logistic <- predict(returns.backward.lr, train, type="response")
+predict.test.logistic <- predict(returns.backward.lr, test, type="response")
+
+train.logistic.pred <- prediction(predict.train.logistic, train$returnShipment)
+train.logistic.roc <- performance(train.logistic.pred, "tpr","fpr")
+train.logistic.auc <- (performance(train.logistic.pred, "auc"))@y.values
+
+test.logistic.pred <- prediction(predict.test.logistic, test$returnShipment)
+test.logistic.roc <- performance(test.logistic.pred, "tpr","fpr")
+test.logistic.auc <- (performance(test.logistic.pred, "auc"))@y.values
+
+# plot the model ROC curves
+pdf(file = "LR_model_backward_elim_ROC.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
+
+plot(train.logistic.roc, col = "darkgreen", main = "ROC Curves for Logistic Regression Model")
+plot(test.logistic.roc, col = "red",  add = TRUE)
+abline(c(0,1))
+# Draw a legend.
+train.legend <- paste("Train: AUC=", round(train.logistic.auc[[1]], digits=3))
+test.legend <- paste("Test : AUC=", round(test.logistic.auc[[1]], digits=3))
+legend(0.6, 0.5, c(train.legend,test.legend), c(3,2))
+dev.off()
+
+str(predict.test.logistic) 
+
+#--Backwards Elimination Model----#
+
+glm(formula = returnShipment ~ color + timeToDeliver + salutation + 
+      accountAge + holidayFlag + LetterSize + ChildSize + ShoeDress + 
+      sizeHighRisk + sizeLowRisk + difFromMeanPrice + price + numItemsInOrder + 
+      numCustOrders + numCustReturns + custRiskFlag + numItemReturns + 
+      numItemOrders + numManufOrders, family = binomial(link = logit), 
+    data = train)
 
 #------------------#
 # Confusion Matrix #  
