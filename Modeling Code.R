@@ -5,12 +5,20 @@ library(neuralnet)
 library(party) # for KT's Random Forest syntax
 
 # Load orders.train post imputation and transformations
-load("~/CAPSTONE/imputedOrdersPostTransformation.rdata")
+# load("~/CAPSTONE/imputedOrdersPostTransformation.rdata")
 
 # Models and ML Algorithms
 
-summary(orders.train)
+
 load("imputedOrdersPostTransformation.rdata")
+summary(orders.train)
+
+
+#eliminate cases where timeToDeliver is NA
+orders.train <- orders.train[complete.cases(orders.train[,17]),]
+summary(orders.train)
+# For final prediction vector, Will need to manually add prediction of returnShipment=0 for incomplete shipments
+
 #------------------------#
 #  Train & Test Split    #
 #------------------------#
