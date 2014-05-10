@@ -35,6 +35,14 @@ test <- orders.train[-which(orders.train$trainTest>0), ]
 remove(smp_size,train_ind)
 
 #------END TRAIN/TEST SPLIT-------#
+# eliminate cases where timeToDeliver is NA 
+# To test against produced LR model, need to do after train / test split, or else seed will select different observations
+# Test shows zero difference in model coefficients - yay!
+# Only difference in Final Model will be due to seed having a different placement in train/test regimen
+# train <- train[complete.cases(train[,17]),]
+# summary(train)
+
+
 
 remove(orders.train) # To clean workspace for 'hungry' algorithms
 
@@ -45,7 +53,7 @@ remove(orders.train) # To clean workspace for 'hungry' algorithms
 
 str(train)
 
-#------ LR "Specified Model"----------#
+#------ LR "JB Trial Model"----------#
 returns.lr <- glm(returnShipment ~ color + timeToDeliver 
                   + salutation + state
                   + accountAge + customerAge 
@@ -169,21 +177,55 @@ dev.off()
 
 str(predict.test.logistic) 
 
-#--Backwards Elimination Model----#
+#-------------------------------------------------#
+#               FINAL MODEL                       #
+#-------------------------------------------------#
+#   Model Produced by Backwards Elimination       #
+#-------------------------------------------------#
 
-glm(formula = returnShipment ~ color + timeToDeliver + salutation + 
+BE.LR.Model <- glm(formula = returnShipment ~ color + timeToDeliver + salutation + 
       accountAge + holidayFlag + LetterSize + ChildSize + ShoeDress + 
       sizeHighRisk + sizeLowRisk + difFromMeanPrice + price + numItemsInOrder + 
       numCustOrders + numCustReturns + custRiskFlag + numItemReturns + 
       numItemOrders + numManufOrders, family = binomial(link = logit), 
     data = train)
 
+summary(BE.LR.Model)
+
+# TO Get ROC Curves
+# get predictions from model 
+predict.train.logistic <- predict(BE.LR.Model, train, type="response")
+predict.test.logistic <- predict(BE.LR.Model, test, type="response")
+
+train.logistic.pred <- prediction(predict.train.logistic, train$returnShipment)
+train.logistic.roc <- performance(train.logistic.pred, "tpr","fpr")
+train.logistic.auc <- (performance(train.logistic.pred, "auc"))@y.values
+
+test.logistic.pred <- prediction(predict.test.logistic, test$returnShipment)
+test.logistic.roc <- performance(test.logistic.pred, "tpr","fpr")
+test.logistic.auc <- (performance(test.logistic.pred, "auc"))@y.values
+
+# plot the model ROC curves
+pdf(file = "BE_LR_Model_ROC.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
+
+plot(train.logistic.roc, col = "darkgreen", main = "ROC Curves for Logistic Regression Model")
+plot(test.logistic.roc, col = "red",  add = TRUE)
+abline(c(0,1))
+# Draw a legend.
+train.legend <- paste("Train: AUC=", round(train.logistic.auc[[1]], digits=3))
+test.legend <- paste("Test : AUC=", round(test.logistic.auc[[1]], digits=3))
+legend(0.6, 0.5, c(train.legend,test.legend), c(3,2))
+dev.off()
+
+str(predict.test.logistic) 
+
+
 #------------------#
 # Confusion Matrix #  
 #------------------#
 # We need to convert preds to actual choice; introduce 'cut'
-# selected a p=.4 cutoff after review of ROC
-predictions<-cut(predict.test.logistic, c(-Inf,0.4,Inf), labels=c("Keep","Return"))
+# After several tested iterations, selected a p=.5 cutoff after review of ROC
+predictions<-cut(predict.test.logistic, c(-Inf,0.5,Inf), labels=c("Keep","Return"))
 # Now have a look - classes are assigned
 str(predictions)
 summary(predictions)
@@ -191,17 +233,34 @@ summary(predictions)
 # Need to impute or eliminate observations with NAs or else have above issue
 str(test$returnShipment)
 summary(test$returnShipment)
+LRactuals <- factor(test$returnShipment,
+                    levels = c(0,1),
+                    labels = c("Keep", "Return"))
+#Needs caret library
+confusionMatrix(predictions, LRactuals)
 
-confusionMatrix(predictions, test$returnShipment)
 
-str(predictions)
-str(test$returnShipment)
+#-----------------------#
+# And then a lift chart #
+#-----------------------#
+pdf("LR_Lift_Chart.pdf")
+train.lift.LR <- performance(train.logistic.pred, "lift","rpp")
+#train.liftforest <- performance(train.rocforest.prediction, "lift","rpp")
+test.lift.LR <- performance(test.logistic.pred, "lift","rpp")
+plot(train.lift.LR, col="green", main = "Lift Curve Logistic Regression")
+#plot(train.liftforest, col="blue", main = "Lift Curve Random Forest")
+plot(test.lift.LR, col="red", add = TRUE)
+legend("bottomleft",c("Sample","Test"),fill=(c("green","red")))
+#legend("bottomleft",c("Training","Test"),fill=(c("blue","red")))
+dev.off()
+
 
 #clean workspace for next algorithm (KT- leave test.logistic.roc/test.logistic.pred for final comparison)
 remove(predict.test.logistic, predict.train.logistic, predictions, returns.lr, 
        test.logistic.auc, #test.logistic.pred, test.logistic.roc,
        train.logistic.roc, train.logistic.pred, train.logistic.auc,
-       test.legend,train.legend)
+       test.legend,train.legend, LRactuals, train.lift.LR, test.lift.LR, 
+       BE.LR.Model, test.logistic.pred, test.logistic.pred, test.logistic.roc)
 
 #-----------------------END LOGISTIC REGRESSION-----------------------#
 
