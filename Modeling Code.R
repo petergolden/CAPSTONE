@@ -346,6 +346,38 @@ dev.off()
 #clean up everything other than the model itself & test.rocforest/test.rocforest.prediction
 remove(predict.forest.sample,predict.forest.test,data.cforest.varimp,data.controls,sample.liftforest,sample.rocforest
        ,sample.rocforest.prediction,sample_ind,test.liftforest)
+#clean up everything other than the model itself & test.rocforest
+remove(predict.forest.sample,predict.forest.test,data.cforest.varimp,data.controls,sample.liftforest,sample.rocforest
+       ,sample.rocforest.prediction,sample_ind,test.liftforest,RFactuals,RFpredictions,test.rocforest.prediction)
+gc()
+memory.size()
+memory.limit()
+
+# fit a random forest model to smaller training set with fewer variables, based on var imp plot
+data.controls <- cforest_unbiased(ntree=1000, mtry=3) #ntree should be increased from default of 500 based on number of predictors and datapoints, mtry default is 5, suggested is sqrt of predictors
+cforest.model <- cforest(returnShipment ~ numCustReturns + numItemReturns + numManufReturns
+                         + difFromMeanPrice + price
+                         + numCustOrders + timeToDeliver + LetterSize
+                         , data = train.sample, controls=data.controls) 
+# Use the model to predict.
+predict2.forest.sample <- predict(cforest.model)
+predict2.forest.test <- predict(cforest.model, newdata = test)
+
+# Plot the performance of the model applied to the evaluation set as an ROC curve.
+sample.rocforest.prediction2 <- prediction(predict2.forest.sample, train.sample[['returnShipment']])
+test.rocforest.prediction2 <- prediction(predict2.forest.test, test$returnShipment)
+
+sample.rocforest2 <- performance(sample.rocforest.prediction2, "tpr","fpr")
+test.rocforest2 <- performance(test.rocforest.prediction2, "tpr","fpr")
+
+plot(sample.rocforest2, col="green", main = "ROC Random Forest")
+plot(test.rocforest2, col="red", add = TRUE)
+abline(c(0,1))
+legend("bottomright",c(paste("Sample: AUC ="
+                             ,round(as.numeric(performance(sample.rocforest.prediction2,"auc")@y.values),4))
+                       ,paste("Test: AUC ="
+                              ,round(as.numeric(performance(test.rocforest.prediction2,"auc")@y.values),4)))
+       ,fill=(c("green","red")))
 
 # reload the neuralnet package so it's available for later syntax
 library(neuralnet)
