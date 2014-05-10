@@ -3,6 +3,8 @@
 # The rest of this code is currently just what had been in the DMC_KT syntax after removing variable stuff
 #####################################
 
+load("~/CAPSTONE/imputedOrdersPostTransformation.rdata")
+
 # Required libraries:
   # cleaned up to remove the ones that didn't appear to be used in current code
   # also moved ALL required libraries to the top here to load at once
@@ -29,8 +31,9 @@ library(corrgram)
 # Look at PDF of numeric variables given reponse
 # Note that we're just using a random sample due to processing time for graphics
 set.seed(498)
-sample_ind <- sample(seq_len(nrow(orders.train)), size = 100)
+sample_ind <- sample(seq_len(nrow(orders.train)), size = 5000)
 orders.sample <- orders.train [sample_ind, ]
+pdf("BeanPlots.pdf",width=8.5,height=11)
 beanplot(customerAge ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Customer Age Distribution", ylab = "Age in Years", xaxt="n")
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(accountAge ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Account Age Distribution", ylab = "Age in Years", xaxt="n")
@@ -39,7 +42,7 @@ beanplot(timeToDeliver ~ returnShipment, orders.sample, side = "b", col = list("
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(price ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Price Distribution", xaxt="n")
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
-
+dev.off()
 #----------END BEAN PLOTS------#
 
 
@@ -78,6 +81,7 @@ sum(is.na(orders.train$variable_names))
 # NOTE- it's been awhile since I've done a TS analysis, so really I was just looking at the plots & packages here. It will likely need a fair bit of revisions.
 avgReturnByDay <- summaryBy(returnShipment ~ orderDate, orders.train, FUN=mean)
 ts.orders <- ts(avgReturnByDay$returnShipment.mean, start=c(2012,4), frequency=365)
+pdf("TimeSeriesPlots.pdf",width=11,height=8.5)
 plot(ts.orders)
 acf(ts.orders,20)
 pacf(ts.orders,20)
@@ -87,6 +91,7 @@ acf(diff(ts.orders),20)
 pacf(diff(ts.orders),20)
 adf.test(ts.orders)
 auto.arima(ts.orders)
+dev.off()
 
 #------------#
 # t-tests    #
