@@ -38,17 +38,16 @@ remove(smp_size,train_ind)
 # eliminate cases where timeToDeliver is NA 
 # To test against produced LR model, need to do after train / test split, or else seed will select different observations
 # Test shows zero difference in model coefficients - yay!
-# Only difference in Final Model will be due to seed having a different placement in train/test regimen
+# Only (minor) differences in Final Model from initial run will be due to seed having a different placement in train/test regimen
 # train <- train[complete.cases(train[,17]),]
 # summary(train)
 
 
-
 remove(orders.train) # To clean workspace for 'hungry' algorithms
 
-#----------------------#
-#  Logistic Regression #
-#----------------------#
+#-------------------------------------------#
+#             Logistic Regression           #
+#-------------------------------------------#
 # Look at Week 3 assignment of Predict 412
 
 str(train)
@@ -143,7 +142,7 @@ legend(0.6, 0.5, c(train.legend,test.legend), c(3,2))
 dev.off()
 
 
-#---------- Backwards elimination selection-----------#
+#---------- Backwards Elimination Selection Procedure -----------#
 # use default AIC measure
 # Note step function uses full model defined above 
 returns.backward.lr <- step(returns.full.lr)
@@ -177,11 +176,13 @@ dev.off()
 
 str(predict.test.logistic) 
 
+###################################################
 #-------------------------------------------------#
-#               FINAL MODEL                       #
+#                  FINAL MODEL                    #
 #-------------------------------------------------#
 #   Model Produced by Backwards Elimination       #
 #-------------------------------------------------#
+###################################################
 
 BE.LR.Model <- glm(formula = returnShipment ~ color + timeToDeliver + salutation + 
       accountAge + holidayFlag + LetterSize + ChildSize + ShoeDress + 
@@ -218,6 +219,34 @@ legend(0.6, 0.5, c(train.legend,test.legend), c(3,2))
 dev.off()
 
 str(predict.test.logistic) 
+
+#-----------------------------------#
+#  Predcition Vector for Class Set  #
+#-----------------------------------#
+
+# Identify and Separate undelivereds
+undelivereds <- subset(orders.class.Imputed, is.na(deliveryDate))
+summary(undelivereds)
+
+# SOMEHOW NEED TO ATTACH A '0' VALUE TO returnShipment
+# maybe can do a cbind of a column with a repeat of '0' to the num of obs
+
+# Eliminate undelivereds so we only predict complete cases for delivereds
+orders.class.Imputed <- orders.class.Imputed[complete.cases(orders.class.Imputed[,17]),]
+summary(orders.class.Imputed)
+
+predict.class.logistic <- predict(BE.LR.Model, orders.class.Imputed, type="response")
+summary(predict.class.logistic)
+
+# Can only test this after I can create the prediction vector
+class.predictions.DF <- rbind(predict.class.logistic, undelivereds)
+
+class.predictions <- class.predictions.DF [4,51] # will have to check column number for prediction vector in this DF
+
+# Alternate approach
+# NEED TO CREATE IF/ELSE CODE ON DELIVERY DATE TO CALL ALL UNDELIVEREDS '0'
+# AND THEN CBIND THOSE TO THE PREDICTION VECTOR
+
 
 
 #------------------#
@@ -260,7 +289,8 @@ remove(predict.test.logistic, predict.train.logistic, predictions, returns.lr,
        test.logistic.auc, #test.logistic.pred, test.logistic.roc,
        train.logistic.roc, train.logistic.pred, train.logistic.auc,
        test.legend,train.legend, LRactuals, train.lift.LR, test.lift.LR, 
-       BE.LR.Model, test.logistic.pred, test.logistic.pred, test.logistic.roc)
+       BE.LR.Model)
+# to remove later if helpful: test.logistic.pred, test.logistic.pred, test.logistic.roc
 
 #-----------------------END LOGISTIC REGRESSION-----------------------#
 
