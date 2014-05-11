@@ -307,6 +307,9 @@ for (i in seq(along = nm)) {
 }
 dev.off()
 
+qplot(orders.train$price, data=orders.train, geom="density", fill=orders.train$returnShipment, alpha=I(.5),
+      main="price by return status", xlab="price",
+      ylab="Density")
 
 #------------------------------------#
 # To illustrate clustering by class  #
