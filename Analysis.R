@@ -96,21 +96,45 @@ dev.off()
 #------------#
 # t-tests    #
 #------------#
+
+# FINAL MODEL FOR VARIABLE REFERENCE
+# BE.LR.Model <- glm(formula = returnShipment ~ color + timeToDeliver + salutation + 
+#                     accountAge + holidayFlag + LetterSize + ChildSize + ShoeDress + 
+#                     sizeHighRisk + sizeLowRisk + difFromMeanPrice + price + numItemsInOrder + 
+#                     numCustOrders + numCustReturns + custRiskFlag + numItemReturns + 
+#                     numItemOrders + numManufOrders, family = binomial(link = logit), 
+#                   data = train)
+
+# Eliminated variables: state + customerAge + holidayFlag + bdayFlag + Pants + 
+#                       itemRiskFlag + numManufReturns + manufRiskFlag,
+
+
 # We should add simple t-tests for binary explanatory variables
 # independent 2-group t-test
 # t.test(y~x) # where y is numeric and x is a binary factor
 t.test(returnShipment~holidayFlag, data=orders.train) # statistically significant
 t.test(returnShipment~bdayFlag, data=orders.train) # not statistically significant
-t.test(returnShipment~manufRiskFlag, data=orders.train) # TOTALLY statistically significant
-t.test(returnShipment~itemRiskFlag, data=orders.train) # TOTALLY statistically significant
-t.test(returnShipment~custRiskFlag, data=orders.train) # TOTALLY statistically significant
+t.test(returnShipment~manufRiskFlag, data=orders.train) # Highly statistically significant
+t.test(returnShipment~itemRiskFlag, data=orders.train) # Highly statistically significant
+t.test(returnShipment~custRiskFlag, data=orders.train) # Highly statistically significant
 t.test(returnShipment~LetterSize, data=orders.train) # statistically significant
 t.test(returnShipment~Pants, data=orders.train) # not statistically significant @95% c.i.
 t.test(returnShipment~ChildSize, data=orders.train) # statistically significant
 t.test(returnShipment~ShoeDress, data=orders.train) # statistically significant
 
-# Wait, can we look at continuous variables this way?
-t.test(price~returnShipment, data=orders.train) # statistically significant
+# We look at continuous variables as well, to see how the means of each separate
+t.test(timeToDeliver~returnShipment, data=orders.train) # Statistically significant
+t.test(accountAge~returnShipment, data=orders.train) # Statistically significant
+t.test(difFromMeanPrice~returnShipment, data=orders.train) # Highly statistically significant
+t.test(price~returnShipment, data=orders.train) # Highly statistically significant
+t.test(numItemsInOrder~returnShipment, data=orders.train) # Highly statistically significant
+t.test(numCustOrders~returnShipment, data=orders.train) # Highly statistically significant
+t.test(numCustReturns~returnShipment, data=orders.train) # Extremely high statistical significance
+t.test(numItemReturns~returnShipment, data=orders.train) # Extremely high statistical significance
+t.test(numItemOrders~returnShipment, data=orders.train) # Highly statistically significant
+t.test(numManufOrders~returnShipment, data=orders.train) # Highly statistically significant
+t.test(customerAge~returnShipment, data=orders.train) # Highly statistically significant
+t.test(numManufReturns~returnShipment, data=orders.train) # Highly statistically significant
 
 
 #---------------#
