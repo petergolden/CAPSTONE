@@ -1,7 +1,6 @@
 # Add Libraries
 library(ROCR)
 library(caret)
-library(neuralnet)
 library(party) # for KT's Random Forest syntax
 
 # Load orders.train post imputation and transformations
@@ -44,6 +43,48 @@ remove(smp_size,train_ind)
 
 
 remove(orders.train) # To clean workspace for 'hungry' algorithms
+
+### This is actually EDA, but wanted to do it after we had the train/test split.
+# ROC curves for individual variables, using logistic regression
+nm <- c("color","timeToDeliver","salutation","state",
+  "accountAge","customerAge","holidayFlag","bdayFlag","LetterSize","Pants",
+  "ChildSize","ShoeDress","difFromMeanPrice","price","numCustOrders",
+  "numCustReturns","custRiskFlag","numItemReturns","numItemOrders",
+  "itemRiskFlag","numManufOrders","numManufReturns","manufRiskFlag")
+models <- lapply(nm, function(x) {
+  glm(substitute(returnShipment ~ i, list(i = as.name(x))), 
+      family=binomial(link=logit), data = train)
+})
+
+pdf("EDA_UnivariateROC.pdf",height=11,width=8.5)
+for (i in seq(along = nm)) {
+  predict.train.eda <- predict(models[[i]], train, type="response")
+  predict.test.eda <- predict(models[[i]], test, type="response")
+  
+  train.eda.pred <- prediction(predict.train.eda, train$returnShipment)
+  train.eda.roc <- performance(train.eda.pred, "tpr","fpr")
+  train.eda.auc <- (performance(train.eda.pred, "auc"))@y.values
+  
+  test.eda.pred <- prediction(predict.test.eda, test$returnShipment)
+  test.eda.roc <- performance(test.eda.pred, "tpr","fpr")
+  test.eda.auc <- (performance(test.eda.pred, "auc"))@y.values
+  
+  # plot the model ROC curves
+  plot(train.eda.roc, col = "darkgreen", 
+       main = paste("ROC Curves for Logistic Regression Model\n",nm[i]))
+  plot(test.eda.roc, col = "red",  add = TRUE)
+  abline(c(0,1))
+  # Draw a legend.
+  train.legend <- paste("Train: AUC=", round(train.eda.auc[[1]], digits=3))
+  test.legend <- paste("Test : AUC=", round(test.eda.auc[[1]], digits=3))
+  legend("bottomright", c(train.legend,test.legend), fill=c("darkgreen","red"))
+}
+dev.off()
+remove(i,models,nm,predict.test.eda,predict.train.eda,
+      test.eda.auc,test.eda.pred,test.eda.roc,test.legend,
+      train.eda.auc,train.eda.pred,train.eda.roc,train.legend)
+gc()
+
 
 #-------------------------------------------#
 #             Logistic Regression           #
@@ -401,7 +442,7 @@ RFactuals <- factor(train.sample$returnShipment,
 confusionMatrix(RFpredictions,RFactuals)
 
 # Plot the performance of the model applied to the evaluation set as an ROC curve.
-detach("package:neuralnet", unload=TRUE) # the prediction function of ROCR was getting overwritten
+#detach("package:neuralnet", unload=TRUE) # the prediction function of ROCR was getting overwritten
 sample.rocforest.prediction <- prediction(predict.forest.sample, train.sample[['returnShipment']])
 #train.rocforest.prediction <- prediction(predict.forest.train, train$returnShipment)
 test.rocforest.prediction <- prediction(predict.forest.test, test$returnShipment)
