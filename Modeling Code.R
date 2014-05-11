@@ -83,6 +83,7 @@ dev.off()
 remove(i,models,nm,predict.test.eda,predict.train.eda,
       test.eda.auc,test.eda.pred,test.eda.roc,test.legend,
       train.eda.auc,train.eda.pred,train.eda.roc,train.legend)
+gc()
 
 
 #-------------------------------------------#
