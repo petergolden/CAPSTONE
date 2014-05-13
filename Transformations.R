@@ -363,9 +363,9 @@ riskyManuf$manufRiskFlag <- ifelse(riskyManuf$returnShipment.length>=50 & riskyM
 names(riskyManuf) <- c("manufacturerID","numManufOrders","numManufReturns","manufRiskFlag")
 # Merge
 orders.train <- merge(orders.train,riskyManuf,by="manufacturerID")
-orders.class.Imputed.mid <- merge(orders.class.Imputed.temp,riskyManuf,
+orders.class.Imputed <- merge(orders.class.Imputed.temp,riskyManuf,
                                    all.x = TRUE, by="manufacturerID")
-
+summary(orders.class.Imputed)
 # Items
 riskyItems <- summaryBy(returnShipment ~ itemID,orders.train,FUN=c(length,mean))
 summary(riskyItems$returnShipment.mean)
@@ -483,4 +483,24 @@ str(orders.train)
 #The "most transforms" represents that I'm not sure how to 
 #get the dupItems variable implemented along with the orderID, everything else
 #should be in there.
-save(orders.class.Imputed, file = "orders_class_Imputed_most_transforms.rdata")
+
+#Finally, before saving --> update any NA values in the imputed data with the mean value
+#from the training dataset
+
+summary(orders.train)
+summary(orders.class.Imputed)
+
+#For many of the new items/manufacturers, do not have enough good data to impute
+# so we will fill in these small number of NAs with mean values for model
+orders.class.Imputed[is.na(orders.class.Imputed$timeToDeliver),"timeToDeliver"] <- 10.72
+orders.class.Imputed[is.na(orders.class.Imputed$numCustOrders), "numCustOrders" ] <- 20.89
+orders.class.Imputed[is.na(orders.class.Imputed$numCustReturns), "numCustReturns"] <- 0.5254
+#Assuming customers are not risky unless they have demonstrated to be so
+orders.class.Imputed[is.na(orders.class.Imputed$custRiskFlag), "custRiskFlag"] <- 0
+orders.class.Imputed[is.na(orders.class.Imputed$numItemReturns),"numItemReturns"] <- 0.5254
+orders.class.Imputed[is.na(orders.class.Imputed$numItemOrders), "numItemOrders"] <- 632.4
+
+summary(orders.class.Imputed)
+
+save(orders.class.Imputed, file = "orders_class_Imputed_FINAL_noNAs.rdata")
+
