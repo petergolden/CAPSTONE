@@ -271,7 +271,7 @@ str(predict.test.logistic)
 #The exception to this is the riskycustomer flag, which I set to 0 
 #(assume a customer is not risky unless they prove to be so).
 
-Load("orders_class_Imputed_FINAL_noNAs.rdata")
+load("orders_class_Imputed_FINAL_noNAs.rdata")
 summary(orders.class.Imputed)
 
 # Identify and Separate undelivereds
@@ -302,6 +302,7 @@ Final.Predictions<-rbind(P1,P2)
 summary(Final.Predictions)
 length(Final.Predictions)/2
 
+write.table(Final.Predictions, file="c:/users/Jim Braun/My Documents\\finalpredictions.txt", row.names=FALSE,sep=";")
 
 #write.csv2(result, file ="F:\\filename.csv",row.names=FALSE)
 #write.csv2 use sep=";" and dec="," as default.
