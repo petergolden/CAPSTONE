@@ -284,11 +284,16 @@ class.predictions.DF <- rbind(predict.class.logistic, undelivereds)
 
 class.predictions <- class.predictions.DF [4,51] # will have to check column number for prediction vector in this DF
 
+#write.csv2(result, file ="F:\\filename.csv",row.names=FALSE)
+#write.csv2 use sep=";" and dec="," as default.
+#write.table(result, file ="F:\\filename.csv",row.names=FALSE,sep=";")
+
+
 # Alternate approach
 # NEED TO CREATE IF/ELSE CODE ON DELIVERY DATE TO CALL ALL UNDELIVEREDS '0'
 # AND THEN CBIND THOSE TO THE PREDICTION VECTOR
 
-
+# rmse(orders.test$returnShipment,predict(logistic.model,orders.test))
 
 #------------------#
 # Confusion Matrix #  
