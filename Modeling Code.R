@@ -12,11 +12,12 @@ library(party) # for KT's Random Forest syntax
 load("imputedOrdersPostTransformation.rdata")
 summary(orders.train)
 
-
 #eliminate cases where timeToDeliver is NA
 orders.train <- orders.train[complete.cases(orders.train[,17]),]
 summary(orders.train)
 # For final prediction vector, Will need to manually add prediction of returnShipment=0 for incomplete shipments
+# FOR WORKING WITH orders.class.Imputed
+
 
 #------------------------#
 #  Train & Test Split    #
@@ -264,25 +265,43 @@ str(predict.test.logistic)
 #-----------------------------------#
 #  Predcition Vector for Class Set  #
 #-----------------------------------#
+#Pete's Comments:
+#For the variables that are fed into the model and have some NAs, 
+#I replaced the NAs with the mean value from the orders.train dataset. 
+#The exception to this is the riskycustomer flag, which I set to 0 
+#(assume a customer is not risky unless they prove to be so).
+
+Load("orders_class_Imputed_FINAL_noNAs.rdata")
+summary(orders.class.Imputed)
 
 # Identify and Separate undelivereds
 undelivereds <- subset(orders.class.Imputed, is.na(deliveryDate))
 summary(undelivereds)
 
-# SOMEHOW NEED TO ATTACH A '0' VALUE TO returnShipment
-# maybe can do a cbind of a column with a repeat of '0' to the num of obs
+# create prediction vector of 0s for return prob for undelivereds, merge
+returnShipment<-rep(c(0),4268)
+undelivereds<-cbind(undelivereds, returnShipment)
+P1<-cbind(undelivereds$orderItemID,undelivereds$returnShipment)
+summary(P1)
+length(P1)/2
 
-# Eliminate undelivereds so we only predict complete cases for delivereds
-orders.class.Imputed <- orders.class.Imputed[complete.cases(orders.class.Imputed[,17]),]
+# Eliminate "undelivereds" from the class set so we only predict complete cases for "delivereds"
+orders.class.Imputed <- orders.class.Imputed[complete.cases(orders.class.Imputed[,6]),]
 summary(orders.class.Imputed)
 
+# create prediction vector for delivereds
 predict.class.logistic <- predict(BE.LR.Model, orders.class.Imputed, type="response")
 summary(predict.class.logistic)
+str(predict.class.logistic)
+P2<- cbind(orders.class.Imputed$orderItemID,predict.class.logistic)
+str(P2)
+length(P2)/2
 
-# Can only test this after I can create the prediction vector
-class.predictions.DF <- rbind(predict.class.logistic, undelivereds)
+# AT LAST!!!!  The Final Predictions!!!!
+Final.Predictions<-rbind(P1,P2)
+summary(Final.Predictions)
+length(Final.Predictions)/2
 
-class.predictions <- class.predictions.DF [4,51] # will have to check column number for prediction vector in this DF
 
 #write.csv2(result, file ="F:\\filename.csv",row.names=FALSE)
 #write.csv2 use sep=";" and dec="," as default.

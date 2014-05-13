@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1399949958875.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "C1FF65E7",
+    "lastKnownWriteTime" : 7741240722073845761,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "undelivereds",
+        "contentUrl" : "content?title=undelivereds&file=364b4b9074584f1ebc62bc6ce7a503c3.htm",
+        "displayedObservations" : 1000,
+        "displayedVariables" : 55,
+        "totalObservations" : 4268,
+        "variables" : 54
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}
