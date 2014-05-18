@@ -358,15 +358,19 @@ remove(predict.test.logistic, predict.train.logistic, predictions, returns.lr,
        BE.LR.Model)
 # to remove later if helpful: test.logistic.pred, test.logistic.pred, test.logistic.roc
 
+#---------------------------------------------------------------------#
 #-----------------------END LOGISTIC REGRESSION-----------------------#
+#---------------------------------------------------------------------#
 
 
 #---------------------------------#
 #         Decision Trees          #
 #---------------------------------#
 # J48 (based on Quinlan's C4.5)
-library(RWeka)
 # to run j48 in RWeka
+library(RWeka)
+# To use predictions f(x)
+library(ROCR)
 # Careful this takes a few minutes!
 remove(orders.train) # clean space
 # J48 cannot handle numeric class - have to convert to factor
@@ -384,10 +388,60 @@ returns_j48 <- J48(RS ~ color + timeToDeliver
 returns_j48
 summary(returns_j48)
 
-# WILL ROC WORK FOR J48? Do we need to use type='class' or 'probability'?
-# Keep getting error ' Format of labels is invalid.'
+
+# to add a 10-folds cross-validation (does it help?)
+eval_j48 <- evaluate_Weka_classifier(returns_j48, numFolds = 10, complexity = FALSE, 
+                                     seed = 1, class = TRUE)
+eval_j48
+
+remove(predict.test.J48, predict.train.J48, predictions, returns_j48, 
+       test.logistic.auc, train.J48.pred, train.J48.roc,train.J48.auc,
+       test.J48.pred, test.J48.roc, test.J48.auc,
+       train.legend, test.legend, eval_j48)
+
+
+#---SAME VARIABLES AS LR----#
+# CANNOT DO a ROC Curve using ROCR if prediction is not a continuous variable #
+# So it doesn't work with J48, which produces a discrete binary classification #
+RS <- as.factor(train$returnShipment)
+j48_selected <- J48(RS ~ color + timeToDeliver + salutation + 
+                     accountAge + holidayFlag + LetterSize + ChildSize + ShoeDress + 
+                     sizeHighRisk + sizeLowRisk + difFromMeanPrice + price + numItemsInOrder + 
+                     numCustOrders + numCustReturns + custRiskFlag + numItemReturns + 
+                     numItemOrders + numManufOrders,
+                   data=train)
+j48_selected
+summary(j48_selected)
+
+
+#-----------------------#
+# And then a lift chart #
+#-----------------------#
+pdf("J48_Lift_Chart.pdf")
 predict.train.J48 <- predict(returns_j48, train, type="probability")
 predict.test.J48 <- predict(returns_j48, test, type="probability")
+
+train.lift.J48 <- performance(predict.train.J48, "lift","rpp")
+test.lift.J48 <- performance(predict.test.J48, "lift","rpp")
+plot(train.lift.J48, col="green", main = "Lift Curve J48")
+plot(test.lift.J48, col="red", add = TRUE)
+legend("bottomleft",c("Sample","Test"),fill=(c("green","red")))
+#legend("bottomleft",c("Training","Test"),fill=(c("blue","red")))
+dev.off()
+
+remove(predict.test.J48, predict.train.J48, predictions, returns_j48, 
+       test.logistic.auc, train.J48.pred, train.J48.roc,train.J48.auc,
+       test.J48.pred, test.J48.roc, test.J48.auc,
+       train.legend, test.legend, j48_selected, RS)
+
+
+
+# PLACEHOLDER CODE FOR ROC
+# WILL ROC WORK FOR J48? NO 
+# Do we need to use type='class' or 'probability'?
+# Keep getting error ' Format of labels is invalid.'
+predict.train.J48 <- predict(returns_j48, train, type="response")
+predict.test.J48 <- predict(returns_j48, test, type="response")
 
 train.J48.pred <- prediction(predict.train.J48, train$RS)
 train.J48.roc <- performance(train.J48.pred, "tpr","fpr")
@@ -409,10 +463,9 @@ test.legend <- paste("Test : AUC=", round(test.J48.auc[[1]], digits=3))
 legend(0.6, 0.5, c(train.legend,test.legend), c(3,2))
 dev.off()
 
-# to add a 10-folds cross-validation (does it help?)
-eval_j48 <- evaluate_Weka_classifier(returns_j48, numFolds = 10, complexity = FALSE, 
-                                     seed = 1, class = TRUE)
-eval_j48
+
+
+#------------------------ END J48--------------------------------#
 
 #--------------------#
 #   Random Forests   #
