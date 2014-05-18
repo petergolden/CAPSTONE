@@ -87,4 +87,4 @@ remove(actuals.test,predict2.forest.sample,predict2.forest.test,
        data.controls,sample.rocforest.prediction2,sample.rocforest2)
 
 # save workspace
-save.image(file="RF_workspace.rdata")
+save.image(file="RF_workspace.RData")
