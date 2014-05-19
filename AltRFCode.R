@@ -80,11 +80,24 @@ legend("bottomright",c(paste("Sample: AUC ="
        ,fill=(c("green","red")))
 dev.off()
 
-# clean up everything except model itself and test.rocforest
-remove(actuals.test,predict2.forest.sample,predict2.forest.test,
-       predict2.forest.test1,predict2.forest.test2,predict2.forest.test3,
-       predict2.forest.test4,test2.1,test2.2,test2.3,test2.4,train2,
-       data.controls,sample.rocforest.prediction2,sample.rocforest2)
+rmse <- function(observed,predicted) {
+  sqrt(mean((observed-predicted)^2))
+}
+
+rmse(actuals.test$returnShipment,predict2.forest.test) # 0.5936 - ouch!
+
+
+# clean up everything except stuff for combined ROC/rmse:
+  # test.rocforest2
+  # test.rocforest.prediction2
+  # predict2.forest.test
+  # actuals.test
+remove(predict2.forest.sample,predict2.forest.test1,predict2.forest.test2,
+       predict2.forest.test3,predict2.forest.test4,test2.1,test2.2,test2.3,
+       test2.4,train2,data.controls,sample.rocforest.prediction2,
+       sample.rocforest2,cforest.model)
 
 # save workspace
 save.image(file="RF_workspace.RData")
+
+
