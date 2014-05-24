@@ -262,8 +262,12 @@ dev.off()
 
 str(predict.test.logistic) 
 
+# save workspace
+save.image(file="Logistic_workspace.RData")
+
+
 #-----------------------------------#
-#  Predcition Vector for Class Set  #
+#  Prediction Vector for Class Set  #
 #-----------------------------------#
 #Pete's Comments:
 #For the variables that are fed into the model and have some NAs, 
