@@ -104,8 +104,8 @@ save.image(file="J48_workspace2.RData")
 #     ROC CURVES      #
 #---------------------#
 
-predict.train.J48 <- predict(j48_selected, train, type="response")
-predict.test.J48 <- predict(j48_selected, test, type="response")
+predict.train.J48 <- predict(j48_selected, train, type="probability")
+predict.test.J48 <- predict(j48_selected, test, type="probability")
 
 train.J48.pred <- prediction(predict.train.J48[,2], train$returnShipment)
 train.J48.roc <- performance(train.J48.pred, "tpr","fpr")
@@ -159,5 +159,15 @@ CF.predict.test.J48 <- predict(j48_selected, test, type="response")
 CF <- confusionMatrix(CF.predict.test.J48, test$returnShipment)
 CF
 
+
+#------------------#
+#   R Square       #
+#------------------#
+cat("\n","Proportion of Test Set Variance Accounted for: ",
+    round((with(test,cor(returnShipment,predict.test.J48)^2)),
+          digits=3),"\n",sep=" ")
+
+round((with(test,cor(returnShipment,predict.test.J48)^2)),
+      digits=3)
 
 #------------------------ END J48--------------------------------#
