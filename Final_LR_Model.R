@@ -101,7 +101,36 @@ rmse(test$returnShipment,predict.test.logistic) # 0.396 - Also Ouch!
 
 
 remove(train, BE.LR.Model, predict.train.logistic, test.logistic.auc, train.logistic.auc, train.logistic.pred, train.logistic.roc)
+gc()
+memory.size()
+memory.limit()
 
 # save workspace
 save.image(file="Logistic_rmse_ROC_space.RData")
 
+
+#------------------#
+# Confusion Matrix #  
+#------------------#
+# We need to convert preds to actual choice; introduce 'cut'
+# After several tested iterations, selected a p=.5 cutoff after review of ROC
+predictions<-cut(predict.test.logistic, c(-Inf,0.5,Inf), labels=c("Keep","Return"))
+# Now have a look - classes are assigned
+str(predictions)
+summary(predictions)
+# compare to test$pick to ensure same # of levels and obs
+# Need to impute or eliminate observations with NAs or else have above issue
+str(test$returnShipment)
+summary(test$returnShipment)
+LRactuals <- factor(test$returnShipment,
+                    levels = c(0,1),
+                    labels = c("Keep", "Return"))
+#Needs caret library
+confusionMatrix(predictions, LRactuals)
+
+#------------------#
+#   R Square       #
+#------------------#
+cat("\n","Proportion of Test Set Variance Accounted for: ",
+round((with(test,cor(returnShipment,predict.test.logistic)^2)),
+      digits=3),"\n",sep="")
