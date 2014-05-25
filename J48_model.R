@@ -71,9 +71,6 @@ rmse(test$returnShipment,predict.test.J48) #0.615  - Also Ouch!
 # save workspace
 save.image(file="J48_workspace.RData")
 
-# NOTE: CANNOT DO a ROC Curve using ROCR if prediction is not a continuous variable #
-# So it doesn't work with J48, which produces a discrete binary classification #
-
 #-----------------------#
 # And then a lift chart #
 #-----------------------#
@@ -91,9 +88,6 @@ plot(test.lift.J48, col="red", add = TRUE)
 legend("bottomleft",c("Sample","Test"),fill=(c("green","red")))
 #legend("bottomleft",c("Training","Test"),fill=(c("blue","red")))
 dev.off()
-
-
-
 
 
 remove(predict.train.J48, predictions, 
@@ -141,6 +135,10 @@ remove(predict.train.J48, train,
        test.J48.roc, test.J48.auc, test.lift.J48,
        train.legend, test.legend, RS)
 
+gc()
+memory.size()
+memory.limit()
+
 # keep
 # test
 # j48_selected
@@ -149,6 +147,17 @@ remove(predict.train.J48, train,
 
 
 save.image(file="J48_rmse_predicts.RData")
+
+
+#-----------------------------------#
+# Confusion Matrix with more detail #
+#-----------------------------------#
+CF.predict.test.J48 <- predict(j48_selected, test, type="class")
+confusionMatrix(CF.predict.test.J48, test$returnShipment)
+
+CF.predict.test.J48 <- predict(j48_selected, test, type="response")
+CF <- confusionMatrix(CF.predict.test.J48, test$returnShipment)
+CF
 
 
 #------------------------ END J48--------------------------------#
