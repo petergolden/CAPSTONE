@@ -30,6 +30,8 @@ cforest.model <- cforest(returnShipment ~ numCustReturns + numItemReturns + numM
                          + difFromMeanPrice + price
                          + numCustOrders + timeToDeliver + LetterSize
                          , data = train2, controls=data.controls) 
+cforest.model
+
 # Use the model to predict.
 predict2.forest.sample <- predict(cforest.model)
 # ran out of memory trying to do whole test set, splitting
@@ -208,3 +210,18 @@ remove(predict3.forest.sample,predict3.forest.test1,predict3.forest.test2,
 # save workspace
 save.image(file="RF_workspace2.RData")
 
+#------------------#
+# Confusion Matrix #  
+#------------------#
+
+load("RF_workspace.RData")
+# Using a p=.5 cutoff initially
+predictions<-cut(predict2.forest.test, c(-Inf,0.2,Inf), labels=c("Keep","Return"))
+RFactuals <- factor(actuals.test$returnShipment,
+                    levels = c(0,1),
+                    labels = c("Keep", "Return"))
+confusionMatrix(predictions, RFactuals)
+
+# Get r squared
+1 - sum((actuals.test$returnShipment-predict2.forest.test)^2)/
+  sum((actuals.test$returnShipment-mean(actuals.test$returnShipment))^2)
