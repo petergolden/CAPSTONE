@@ -693,6 +693,8 @@ dev.off()
 #   proofreading my contributions)#
 #---------------------------------#
 
+library(neuralnet)
+
 set.seed(2000)
 
 #Need to convery all our factors to quantitative inputs using dummy variables
@@ -714,41 +716,53 @@ summary(simpleResults$net.result)
 #Full model
 
 
+
+
 ################ ANN Model ###################
+library(neuralnet)
 
-designMatrix <- model.matrix(~returnShipment + color + timeToDeliver 
-                             + salutation + state
-                             + accountAge + customerAge 
-                             + holidayFlag + bdayFlag 
-                             + LetterSize + Pants + ChildSize + ShoeDress 
-                             + difFromMeanPrice + price  
-                             + numCustOrders + numCustReturns + custRiskFlag 
-                             + numItemReturns + numItemOrders + itemRiskFlag
-                             + numManufOrders + numManufReturns + manufRiskFlag,
-                             data = train)
 
-covList = c("color", "timeToDeliver", "salutation", "state", "accountAge",
-            "customerAge", "holidayFlag", "bdayFlag", "LetterSize", "Pants",
-            "ChildSize", "ShoeDress", "difFromMeanPrice", "price", "numCustOrders",
-            "numCustReturns", "custRiskFlag", "numItemReturns", "numItemOrders",
-            "itemRiskFlag", "numManufOrders", "numManufReturns", "manufRiskFlag")
+formula = returnShipment ~ color + timeToDeliver + salutation + 
+  accountAge + holidayFlag + LetterSize + ChildSize + ShoeDress + 
+  sizeHighRisk + sizeLowRisk + difFromMeanPrice + price + numItemsInOrder + 
+  numCustOrders + numCustReturns + custRiskFlag + numItemReturns + 
+  numItemOrders + numManufOrders
+
+
+designMatrix <- model.matrix(formula, data = train)
+
+covList = c("color", "timeToDeliver", "salutation", 
+              "accountAge", "holidayFlag", "LetterSize", "ChildSize", "ShoeDress", 
+              "sizeHighRisk",  "sizeLowRisk", "difFromMeanPrice", "price", "numItemsInOrder", 
+              "numCustOrders",  "numCustReturns", "custRiskFlag",  "numItemReturns",
+              "numItemOrders",  "numManufOrders")
 #Need to fix the column names so we can use them ase variable inputs into our formula
-colnames(designMatrix)[19] <- "salutationnotreported"
-colnames(designMatrix)[26] <- "stateLowerSaxony"
-colnames(designMatrix)[27] <- "stateMecklenburgWesternPomerania"
-colnames(designMatrix)[28] <- "stateNorthRhineWestphalia"
-colnames(designMatrix)[29] <- "stateRhinelandPalatinate"
-colnames(designMatrix)[32] <- "stateSaxonyAnhalt"
-colnames(designMatrix)[33] <- "stateSchleswigHolstein"
+colnames(designMatrix)[18] <- "salutationnotreported"
+#colnames(designMatrix)[26] <- "stateLowerSaxony"
+#colnames(designMatrix)[27] <- "stateMecklenburgWesternPomerania"
+#colnames(designMatrix)[28] <- "stateNorthRhineWestphalia"
+#colnames(designMatrix)[29] <- "stateRhinelandPalatinate"
+#colnames(designMatrix)[32] <- "stateSaxonyAnhalt"
+#colnames(designMatrix)[33] <- "stateSchleswigHolstein"
 
-nnformula <- as.formula(paste("returnShipment ~ ", paste(colnames(designMatrix[,-1:-2]),collapse ="+")))
-nn <- neuralnet( nnformula, data = designMatrix[1:200000,], hidden=1, threshold=0.01,
+nnData = cbind(train$returnShipment,designMatrix, deparse.level = 2)[1:10000,]
+colnames(nnData)[1] <- "returnShipment"
+nnformula <- as.formula(paste("returnShipment ~ ", paste(colnames(designMatrix[,-1]),collapse ="+")))
+print(paste("Start training at: ", Sys.time()))
+nn <- neuralnet( nnformula, data = nnData, hidden=1, threshold=0.01,
                 linear.output = FALSE, likelihood = TRUE )
+print(paste("Stop training at: ", Sys.time()))
+print(nn$net.result)
+testDesignMatrix <- model.matrix(formula, data = test)
+colnames(testDesignMatrix)[18] <- "salutationnotreported"
+covariate <- subset( testDesignMatrix, select = nn$model.list$variables)
 
-simpleResults <- compute(nn, test[, covList])
+simpleResults <- compute(nn, covariate)
+summary(simpleResults$net.result)
 
-# Ensemble Methods
-# Perhaps can average prediction from some of above
+test.nn.pred <- compute(nn, covariate)
+test.logistic.roc <- performance(test.logistic.pred, "tpr","fpr")
+test.logistic.auc <- (performance(test.logistic.pred, "auc"))@y.values
 
 #----------------------#
 #   Model Comparison   #
