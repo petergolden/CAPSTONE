@@ -761,12 +761,16 @@ testDesignMatrix <- model.matrix(formula, data = test)
 colnames(testDesignMatrix)[18] <- "salutationnotreported"
 covariate <- subset( testDesignMatrix, select = nn$model.list$variables)
 
-simpleResults <- compute(nn, covariate)
+testResults <- compute(nn, covariate)
 summary(simpleResults$net.result)
 
-test.nn.pred <- compute(nn, covariate)
-test.logistic.roc <- performance(test.logistic.pred, "tpr","fpr")
-test.logistic.auc <- (performance(test.logistic.pred, "auc"))@y.values
+#Generate our test statistics for the neuralnet
+
+predict.test.nn <- ROCR::prediction(predictions=testResults$net.result, labels=test[,"returnShipment"]) #, test) #, type="response")
+
+#test.nn.pred <- prediction(predict.train.eda, train$returnShipment)
+test.nn.roc <- performance(predict.test.nn, "tpr","fpr")
+test.nn.auc <- (performance(predict.test.nn, "auc"))@y.values
 
 #----------------------#
 #   Model Comparison   #
@@ -776,6 +780,7 @@ test.logistic.auc <- (performance(test.logistic.pred, "auc"))@y.values
 ################ All Models in one ROC (test data only) ###################
 pdf("ModelComparison.pdf")
 plot(test.logistic.roc, col="blue", main = "ROC Model Comparison")
+
 plot(test.rocforest, col="red", add = TRUE)
 plot(test.rocsvm, col="green", add = TRUE)
 plot(test.rocann, col="grey", add = TRUE)
