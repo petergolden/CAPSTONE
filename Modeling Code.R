@@ -753,15 +753,15 @@ nnData = cbind(train$returnShipment,designMatrix, deparse.level = 2)[1:10000,]
 colnames(nnData)[1] <- "returnShipment"
 nnformula <- as.formula(paste("returnShipment ~ ", paste(colnames(designMatrix[,-1]),collapse ="+")))
 print(paste("Start training at: ", Sys.time()))
-nn <- neuralnet( nnformula, data = nnData, hidden=1, threshold=0.01,
+nn <- neuralnet( nnformula, data = nnData, hidden=3, threshold=0.01,
                 linear.output = FALSE, likelihood = TRUE )
 print(paste("Stop training at: ", Sys.time()))
-print(nn$net.result)
+#print(nn$net.result)
 testDesignMatrix <- model.matrix(formula, data = test)
 colnames(testDesignMatrix)[18] <- "salutationnotreported"
-covariate <- subset( testDesignMatrix, select = nn$model.list$variables)
 
-testResults <- compute(nn, covariate)
+covariatesForTesting <- subset( testDesignMatrix, select = nn$model.list$variables)
+testResults <- compute(nn, covariatesForTesting)
 summary(simpleResults$net.result)
 
 #Generate our test statistics for the neuralnet
@@ -771,6 +771,40 @@ predict.test.nn <- ROCR::prediction(predictions=testResults$net.result, labels=t
 #test.nn.pred <- prediction(predict.train.eda, train$returnShipment)
 test.nn.roc <- performance(predict.test.nn, "tpr","fpr")
 test.nn.auc <- (performance(predict.test.nn, "auc"))@y.values
+#rmse function is defined at bottom of script
+test.nn.rmse <- rmse(testResults$net.result,test[,"returnShipment"] )
+test.nn.rsquare <- cor(testResults$net.result,test[,"returnShipment"] )
+#Need AUC, RMSE, Accuracy, sensitivity, Specificity
+
+
+cuts <- seq(from = 0.4, to=0.6, by = 0.001)
+bestCut <- 0.4
+maxAccuracy <- 0
+for(c in cuts){
+  #Lets attempt to find optimal cutpoint
+  predictions<-cut(testResults$net.result, c(-Inf,c,Inf), labels=c("Keep","Return"))
+  # Now have a look - classes are assigned
+  #str(predictions)
+  #summary(predictions)
+  # compare to test$pick to ensure same # of levels and obs
+  # Need to impute or eliminate observations with NAs or else have above issue
+  #str(test$returnShipment)
+  #summary(test$returnShipment)
+  LRactuals <- factor(test$returnShipment,
+                      levels = c(0,1),
+                      labels = c("Keep", "Return"))
+  #Needs caret library
+  cMatrix <- confusionMatrix(predictions, LRactuals)
+  #print(paste(c,cMatrix[[3]][1], sep=": "))
+  if( maxAccuracy < cMatrix[[3]][1] ){
+    maxAccuracy <- cMatrix[[3]][1]
+    bestCut <- c
+    bestMatrix <- cMatrix
+  }
+}
+
+print(paste("Best cut: ", as.character(bestCut)))
+print(bestMatrix)
 
 #----------------------#
 #   Model Comparison   #
