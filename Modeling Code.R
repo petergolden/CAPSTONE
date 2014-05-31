@@ -697,6 +697,8 @@ dev.off()
 #   proofreading my contributions)#
 #---------------------------------#
 
+library(neuralnet)
+
 set.seed(2000)
 
 #Need to convery all our factors to quantitative inputs using dummy variables
@@ -718,41 +720,91 @@ summary(simpleResults$net.result)
 #Full model
 
 
+
+
 ################ ANN Model ###################
+library(neuralnet)
 
-designMatrix <- model.matrix(~returnShipment + color + timeToDeliver 
-                             + salutation + state
-                             + accountAge + customerAge 
-                             + holidayFlag + bdayFlag 
-                             + LetterSize + Pants + ChildSize + ShoeDress 
-                             + difFromMeanPrice + price  
-                             + numCustOrders + numCustReturns + custRiskFlag 
-                             + numItemReturns + numItemOrders + itemRiskFlag
-                             + numManufOrders + numManufReturns + manufRiskFlag,
-                             data = train)
 
-covList = c("color", "timeToDeliver", "salutation", "state", "accountAge",
-            "customerAge", "holidayFlag", "bdayFlag", "LetterSize", "Pants",
-            "ChildSize", "ShoeDress", "difFromMeanPrice", "price", "numCustOrders",
-            "numCustReturns", "custRiskFlag", "numItemReturns", "numItemOrders",
-            "itemRiskFlag", "numManufOrders", "numManufReturns", "manufRiskFlag")
+formula = returnShipment ~ color + timeToDeliver + salutation + 
+  accountAge + holidayFlag + LetterSize + ChildSize + ShoeDress + 
+  sizeHighRisk + sizeLowRisk + difFromMeanPrice + price + numItemsInOrder + 
+  numCustOrders + numCustReturns + custRiskFlag + numItemReturns + 
+  numItemOrders + numManufOrders
+
+
+designMatrix <- model.matrix(formula, data = train)
+
+covList = c("color", "timeToDeliver", "salutation", 
+              "accountAge", "holidayFlag", "LetterSize", "ChildSize", "ShoeDress", 
+              "sizeHighRisk",  "sizeLowRisk", "difFromMeanPrice", "price", "numItemsInOrder", 
+              "numCustOrders",  "numCustReturns", "custRiskFlag",  "numItemReturns",
+              "numItemOrders",  "numManufOrders")
 #Need to fix the column names so we can use them ase variable inputs into our formula
-colnames(designMatrix)[19] <- "salutationnotreported"
-colnames(designMatrix)[26] <- "stateLowerSaxony"
-colnames(designMatrix)[27] <- "stateMecklenburgWesternPomerania"
-colnames(designMatrix)[28] <- "stateNorthRhineWestphalia"
-colnames(designMatrix)[29] <- "stateRhinelandPalatinate"
-colnames(designMatrix)[32] <- "stateSaxonyAnhalt"
-colnames(designMatrix)[33] <- "stateSchleswigHolstein"
+colnames(designMatrix)[18] <- "salutationnotreported"
+#colnames(designMatrix)[26] <- "stateLowerSaxony"
+#colnames(designMatrix)[27] <- "stateMecklenburgWesternPomerania"
+#colnames(designMatrix)[28] <- "stateNorthRhineWestphalia"
+#colnames(designMatrix)[29] <- "stateRhinelandPalatinate"
+#colnames(designMatrix)[32] <- "stateSaxonyAnhalt"
+#colnames(designMatrix)[33] <- "stateSchleswigHolstein"
 
-nnformula <- as.formula(paste("returnShipment ~ ", paste(colnames(designMatrix[,-1:-2]),collapse ="+")))
-nn <- neuralnet( nnformula, data = designMatrix[1:200000,], hidden=1, threshold=0.01,
+nnData = cbind(train$returnShipment,designMatrix, deparse.level = 2)[1:10000,]
+colnames(nnData)[1] <- "returnShipment"
+nnformula <- as.formula(paste("returnShipment ~ ", paste(colnames(designMatrix[,-1]),collapse ="+")))
+print(paste("Start training at: ", Sys.time()))
+nn <- neuralnet( nnformula, data = nnData, hidden=3, threshold=0.01,
                 linear.output = FALSE, likelihood = TRUE )
+print(paste("Stop training at: ", Sys.time()))
+#print(nn$net.result)
+testDesignMatrix <- model.matrix(formula, data = test)
+colnames(testDesignMatrix)[18] <- "salutationnotreported"
 
-simpleResults <- compute(nn, test[, covList])
+covariatesForTesting <- subset( testDesignMatrix, select = nn$model.list$variables)
+testResults <- compute(nn, covariatesForTesting)
+summary(simpleResults$net.result)
 
-# Ensemble Methods
-# Perhaps can average prediction from some of above
+#Generate our test statistics for the neuralnet
+
+predict.test.nn <- ROCR::prediction(predictions=testResults$net.result, labels=test[,"returnShipment"]) #, test) #, type="response")
+
+#test.nn.pred <- prediction(predict.train.eda, train$returnShipment)
+test.nn.roc <- performance(predict.test.nn, "tpr","fpr")
+test.nn.auc <- (performance(predict.test.nn, "auc"))@y.values
+#rmse function is defined at bottom of script
+test.nn.rmse <- rmse(testResults$net.result,test[,"returnShipment"] )
+test.nn.rsquare <- cor(testResults$net.result,test[,"returnShipment"] )
+#Need AUC, RMSE, Accuracy, sensitivity, Specificity
+
+
+cuts <- seq(from = 0.4, to=0.6, by = 0.001)
+bestCut <- 0.4
+maxAccuracy <- 0
+for(c in cuts){
+  #Lets attempt to find optimal cutpoint
+  predictions<-cut(testResults$net.result, c(-Inf,c,Inf), labels=c("Keep","Return"))
+  # Now have a look - classes are assigned
+  #str(predictions)
+  #summary(predictions)
+  # compare to test$pick to ensure same # of levels and obs
+  # Need to impute or eliminate observations with NAs or else have above issue
+  #str(test$returnShipment)
+  #summary(test$returnShipment)
+  LRactuals <- factor(test$returnShipment,
+                      levels = c(0,1),
+                      labels = c("Keep", "Return"))
+  #Needs caret library
+  cMatrix <- confusionMatrix(predictions, LRactuals)
+  #print(paste(c,cMatrix[[3]][1], sep=": "))
+  if( maxAccuracy < cMatrix[[3]][1] ){
+    maxAccuracy <- cMatrix[[3]][1]
+    bestCut <- c
+    bestMatrix <- cMatrix
+  }
+}
+
+print(paste("Best cut: ", as.character(bestCut)))
+print(bestMatrix)
 
 #----------------------#
 #   Model Comparison   #
@@ -762,6 +814,7 @@ simpleResults <- compute(nn, test[, covList])
 ################ All Models in one ROC (test data only) ###################
 pdf("ModelComparison.pdf")
 plot(test.logistic.roc, col="blue", main = "ROC Model Comparison")
+
 plot(test.rocforest, col="red", add = TRUE)
 plot(test.rocsvm, col="green", add = TRUE)
 plot(test.rocann, col="grey", add = TRUE)
