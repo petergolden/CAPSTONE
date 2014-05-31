@@ -57,7 +57,7 @@ models <- lapply(nm, function(x) {
       family=binomial(link=logit), data = train)
 })
 
-pdf("EDA_UnivariateROC.pdf",height=11,width=8.5)
+pdf("EDA_UnivariateROC.pdf",width=11,height=8.5)
 for (i in seq(along = nm)) {
   predict.train.eda <- predict(models[[i]], train, type="response")
   predict.test.eda <- predict(models[[i]], test, type="response")
