@@ -33,6 +33,7 @@ library(corrgram)
 set.seed(498)
 sample_ind <- sample(seq_len(nrow(orders.train)), size = 5000)
 orders.sample <- orders.train [sample_ind, ]
+str(orders.sample)
 pdf("BeanPlots.pdf",width=8.5,height=11)
 beanplot(customerAge ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Customer Age Distribution", ylab = "Age in Years", xaxt="n")
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
@@ -41,6 +42,31 @@ legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "ora
 beanplot(timeToDeliver ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Delivery Time Distribution", ylab = "Time in Days", xaxt="n")
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(price ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Price Distribution", xaxt="n")
+legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+beanplot(difFromMeanPrice ~ returnShipment, orders.sample, 
+         side = "b", col = list("yellow", "orange"), 
+         border = c("yellow2","darkorange"), 
+         main = "Distribution of Diff From Mean Price", xaxt="n")
+legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+beanplot(numItemsInOrder ~ returnShipment, orders.sample, 
+         side = "b", col = list("yellow", "orange"), 
+         border = c("yellow2","darkorange"), 
+         main = "Distribution of Number of Items in Order", xaxt="n")
+legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+beanplot(numManufOrders ~ returnShipment, orders.sample, 
+         side = "b", col = list("yellow", "orange"), 
+         border = c("yellow2","darkorange"), 
+         main = "Distribution of Number of Times Manuf Was Ordered", xaxt="n")
+legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+beanplot(numItemOrders ~ returnShipment, orders.sample, 
+         side = "b", col = list("yellow", "orange"), 
+         border = c("yellow2","darkorange"), 
+         main = "Distribution of Number of Times Item Was Ordered", xaxt="n")
+legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+beanplot(numCustOrders ~ returnShipment, orders.sample, 
+         side = "b", col = list("yellow", "orange"), 
+         border = c("yellow2","darkorange"), 
+         main = "Distribution of Number of Customer Orders", xaxt="n")
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 dev.off()
 #----------END BEAN PLOTS------#
@@ -376,7 +402,7 @@ scatterplot(numManufReturns ~ numCustReturns, data=orders.train, boxplots=FALSE,
 
 
 # Numeric fields for sample scatterplot
-orders.numeric <- orders.sample[c("price","timeToDeliver","accountAge","customerAge","numItemOrders","numItemID")]
+orders.numeric <- orders.sample[c("price","timeToDeliver","accountAge","customerAge","numItemOrders","numManufOrders","numCustOrders","numItemsInOrder","difFromMeanPrice")]
 # (KT) I've been using this version for my scatterplot matrix
 panel.cor <-function(x,y,digits=3,prefix="",cex.cor,...){ # gives you the ability to show correlation coefficients in the matrix
   usr <- par("usr")
@@ -402,11 +428,44 @@ panel.density <-function(x,...){ # allows you to show density on the diagonal
   box(col = "lightgray")
 } # Modified from corrgram package version of panel.density
 
-pairs(Orders.numeric,pch=".",diag.panel=panel.density,lower.panel=panel.smooth,upper.panel=panel.cor,main="Scatterplot Matrix") 
+pairs(orders.numeric,pch=".",diag.panel=panel.density,lower.panel=panel.smooth,upper.panel=panel.cor,main="Scatterplot Matrix") 
 # pch = "." uses dots instead of circles for points. Leave out if circles are what you want.
 
+panel.correl <- function (x, y, corr = NULL, col.regions, digits = 2, cex.cor, 
+          ...) 
+{
+  auto <- missing(cex.cor)
+  usr <- par("usr")
+  on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  if (!is.null(corr)) {
+    est <- corr
+    est <- formatC(est, digits = digits, format = "f")
+    if (auto) 
+      cex.cor <- 0.7/strwidth(est)
+    cex.col <- "black"
+    if(est > 0.2) cex.col="blue" # this highlights large values- if not needed you can remove this line and the one above, as well as the col= below
+    text(0.5, 0.6, est, cex = cex.cor, col=cex.col)
+  }
+  else {
+    results <- cor.test(x, y, alternative = "two.sided")
+    est <- results$estimate
+    est <- formatC(est, digits = digits, format = "f")
+    if (auto) 
+      cex.cor <- 0.7/strwidth(est)
+    cex.col <- "black"
+    if(abs(as.numeric(est)) > 0.2) cex.col="red"
+    if(est > 0.2) cex.col="blue" # this highlights large values- if not needed you can remove this line and the one above, as well as the col= below
+    text(0.5, 0.6, est, cex = cex.cor,col=cex.col)
+  }
+}
 # (KT) Alternate using corrgram package
-corrgram(orders.numeric,main="Correlations",lower.panel=panel.ellipse,diag.panel=panel.density)
+pdf("EDA_Correlations.pdf",width=11,height=8.5)
+corrgram(orders.numeric,main="Correlations",
+         lower.panel=panel.ellipse,
+         upper.panel=panel.correl,
+         diag.panel=panel.density)
+dev.off()
 
 #------------------------------------------#
 # Conditioned XY Plots - to look in panels #
