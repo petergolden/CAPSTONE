@@ -41,8 +41,44 @@ numManufOrders <- scale(orders.train$numManufOrders, center= TRUE, scale = TRUE)
 
 # Data Check
 
-#summary(color) 
-#summary(salutation) 
+summary(orders.train$salutation) 
+
+company <- ifelse(orders.train$salutation=='Company',1,0)
+family <- ifelse(orders.train$salutation=='Family',1,0)
+Mr <- ifelse(orders.train$salutation=='Mr',1,0)
+
+summary(company)
+summary(family)
+summary(Mr)
+
+
+summary(orders.train$color) 
+brown <- ifelse(orders.train$color=='brown',1,0)
+purple <- ifelse(orders.train$color=='purple',1,0)
+weird <- ifelse(orders.train$color=='weird',1,0)
+grey <- ifelse(orders.train$color=='grey',1,0)
+pink <- ifelse(orders.train$color=='pink',1,0)
+green <- ifelse(orders.train$color=='green',1,0)
+blue <- ifelse(orders.train$color=='blue',1,0)
+black <- ifelse(orders.train$color=='black',1,0)
+red <- ifelse(orders.train$color=='red',1,0)
+white <- ifelse(orders.train$color=='white',1,0)
+yellow <- ifelse(orders.train$color=='yellow',1,0)
+orange <- ifelse(orders.train$color=='orange',1,0)
+
+summary(brown) 
+summary(purple) 
+summary(weird) 
+summary(grey) 
+summary(pink) 
+summary(green) 
+summary(blue) 
+summary(black) 
+summary(red) 
+summary(white) 
+summary(yellow) 
+summary(orange)
+
 
 summary(timeToDeliver) 
 summary(accountAge) 
@@ -63,21 +99,6 @@ summary(numItemOrders)
 summary(numManufOrders) 
 
 
-
-#------------------------#
-#  Train & Test Split    #
-#------------------------#
-smp_size <- floor(0.7 * max(orders.train$orderID))
-set.seed(498)
-train_ind <- sample(seq_len(max(orders.train$orderID)), size = smp_size)
-orders.train$trainTest <- train_ind[orders.train$orderID]
-train <- orders.train[which(orders.train$trainTest>0), ]
-test <- orders.train[-which(orders.train$trainTest>0), ]
-remove(smp_size,train_ind)
-
-remove(orders.train) # To clean workspace for 'hungry' algorithms
-
-
 ###################################################
 #-------------------------------------------------#
 #                  FINAL MODEL                    #
@@ -91,17 +112,26 @@ BE.LR.Model <- glm(formula = returnShipment ~ timeToDeliver +
                      sizeHighRisk + sizeLowRisk + difFromMeanPrice + price + numItemsInOrder + 
                      numCustOrders + numCustReturns + custRiskFlag + numItemReturns + 
                      numItemOrders + numManufOrders, family = binomial(link = logit), 
-                   data = train)
+                   data = orders.train)
 
 summary(BE.LR.Model)
 
 
-#BE.LR.Model <- glm(formula = returnShipment ~ timeToDeliver + color + salutation
-#                     accountAge + holidayFlag + LetterSize + ChildSize + ShoeDress + 
-#                     sizeHighRisk + sizeLowRisk + difFromMeanPrice + price + numItemsInOrder + 
-#                     numCustOrders + numCustReturns + custRiskFlag + numItemReturns + 
-#                     numItemOrders + numManufOrders, family = binomial(link = logit), 
-#                   data = train)
+LR.Model.Scaled <- glm(formula = returnShipment ~ timeToDeliver + 
+                    brown + purple + weird + grey + pink + green + blue + black + red + white + yellow + orange +
+                     company + family + Mr +
+                     accountAge + holidayFlag + LetterSize + ChildSize + ShoeDress + 
+                     sizeHighRisk + sizeLowRisk + difFromMeanPrice + price + numItemsInOrder + 
+                     numCustOrders + numCustReturns + custRiskFlag + numItemReturns + 
+                     numItemOrders + numManufOrders, family = binomial(link = logit), 
+                   data = orders.train)
 
-#summary(BE.LR.Model)
+summary(LR.Model.Scaled)
+
+rm(orders.train, BE.LR.Model, LR.Model.Scaled, Mr, company, family, Mr,
+   brown, purple, weird, grey, pink, green, blue, black, red, white, yellow, orange)
+
+gc()
+memory.size()
+memory.limit()
 
