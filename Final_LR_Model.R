@@ -134,3 +134,17 @@ confusionMatrix(predictions, LRactuals)
 cat("\n","Proportion of Test Set Variance Accounted for: ",
 round((with(test,cor(returnShipment,predict.test.logistic)^2)),
       digits=3),"\n",sep="")
+
+
+#-----------------------------------------------#
+# to get obs vs. predictions for manual calcs   #
+#-----------------------------------------------#
+
+examples <- test[,c("color","timeToDeliver", "salutation", 
+                      "accountAge", "holidayFlag", "LetterSize", "ChildSize", "ShoeDress",  
+                      "sizeHighRisk", "sizeLowRisk", "difFromMeanPrice", "price", "numItemsInOrder",  
+                      "numCustOrders", "numCustReturns", "custRiskFlag", "numItemReturns",  
+                      "numItemOrders", "numManufOrders", "returnShipment")]
+head(examples)
+head(predict.test.logistic)
+

@@ -66,6 +66,7 @@ white <- ifelse(orders.train$color=='white',1,0)
 yellow <- ifelse(orders.train$color=='yellow',1,0)
 orange <- ifelse(orders.train$color=='orange',1,0)
 
+sink ("z_score_ranges.txt")       ##/\open sink/\##
 summary(brown) 
 summary(purple) 
 summary(weird) 
@@ -78,7 +79,6 @@ summary(red)
 summary(white) 
 summary(yellow) 
 summary(orange)
-
 
 summary(timeToDeliver) 
 summary(accountAge) 
@@ -97,6 +97,7 @@ summary(custRiskFlag)
 summary(numItemReturns) 
 summary(numItemOrders) 
 summary(numManufOrders) 
+sink()        			            ##\/close sink\/##
 
 
 ###################################################
@@ -116,7 +117,7 @@ BE.LR.Model <- glm(formula = returnShipment ~ timeToDeliver +
 
 summary(BE.LR.Model)
 
-
+sink ("Final_Scaled_LR.txt")       ##/\open sink/\##
 LR.Model.Scaled <- glm(formula = returnShipment ~ timeToDeliver + 
                     brown + purple + weird + grey + pink + green + blue + black + red + white + yellow + orange +
                      company + family + Mr +
@@ -127,6 +128,9 @@ LR.Model.Scaled <- glm(formula = returnShipment ~ timeToDeliver +
                    data = orders.train)
 
 summary(LR.Model.Scaled)
+sink()        			            ##\/close sink\/##
+
+
 
 rm(orders.train, BE.LR.Model, LR.Model.Scaled, Mr, company, family, Mr,
    brown, purple, weird, grey, pink, green, blue, black, red, white, yellow, orange)
