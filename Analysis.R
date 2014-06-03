@@ -3,7 +3,7 @@
 # The rest of this code is currently just what had been in the DMC_KT syntax after removing variable stuff
 #####################################
 
-load("~/CAPSTONE/imputedOrdersPostTransformation.rdata")
+#load("~/CAPSTONE/imputedOrdersPostTransformation.rdata")
 
 load("imputedOrdersPostTransformation.rdata")
 summary(orders.train)
@@ -173,9 +173,9 @@ t.test(numManufReturns~returnShipment, data=orders.train) # Highly statistically
 
 sink()    					            ##\/close sink\/##
 
-#---------------#
-# K-S-tests 'D' #
-#---------------#
+#------------------------#
+#      K-S-tests 'D'     #
+#------------------------#
 # K-S-tests for continuous explanatory variables 
 # K-S test won't use variables 'as-is' - need to create vectors for each response variable
 
@@ -320,9 +320,9 @@ sink()      				            ##\/close sink\/##
 
 #------------End KS----------------#
 
-#------------------------#
-#     Correlation        #
-#------------------------#
+#--------------------------------#
+#     Pearson Correlation        #
+#--------------------------------#
 
 library(Hmisc)
 
@@ -330,61 +330,92 @@ sink ("correlations.txt")   	  ##/\open sink/\##
 # included in LR BE
 cat("\n","----- correlation and significance therein between returns and color -----","\n")
 rcorr(orders.train$returnShipment, orders.train$color, type="pearson")
-
-cat("\n","----- correlation and significance therein between returns and color -----","\n")
+cat("\n","----- correlation and significance therein between returns and delivery time -----","\n")
 rcorr(orders.train$returnShipment, orders.train$timeToDeliver, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and salutation -----","\n")
 rcorr(orders.train$returnShipment, orders.train$salutation, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and account age -----","\n")
 rcorr(orders.train$returnShipment, orders.train$accountAge, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and Christmas time -----","\n")
 rcorr(orders.train$returnShipment, orders.train$holidayFlag, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and sizing in letters -----","\n")
 rcorr(orders.train$returnShipment, orders.train$LetterSize, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and childrens' sizes -----","\n")
 rcorr(orders.train$returnShipment, orders.train$ChildSize, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and size range for shoes and dresses -----","\n")
 rcorr(orders.train$returnShipment, orders.train$ShoeDress, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and high risk sizes -----","\n")
 rcorr(orders.train$returnShipment, orders.train$sizeHighRisk, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and low risk sizes -----","\n")
 rcorr(orders.train$returnShipment, orders.train$sizeLowRisk, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and difference between transaction price and mean -----","\n")
 rcorr(orders.train$returnShipment, orders.train$difFromMeanPrice, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and price -----","\n")
 rcorr(orders.train$returnShipment, orders.train$price, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and basket size proxy -----","\n")
 rcorr(orders.train$returnShipment, orders.train$numItemsInOrder, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and total number of customer orders -----","\n")
 rcorr(orders.train$returnShipment, orders.train$numCustOrders, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and return frequency by customer -----","\n")
 rcorr(orders.train$returnShipment, orders.train$numCustReturns, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and indicator for a high risk customer -----","\n")
 rcorr(orders.train$returnShipment, orders.train$custRiskFlag, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and total number of returns for an item -----","\n")
 rcorr(orders.train$returnShipment, orders.train$numItemReturns, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and total number of orders for that item -----","\n")
 rcorr(orders.train$returnShipment, orders.train$numItemOrders, type="pearson")
-
 cat("\n","----- correlation and significance therein between returns and the number of orders for that manufacturer -----","\n")
 rcorr(orders.train$returnShipment, orders.train$numManufOrders, type="pearson")
 
+sink()  						            ##\/close sink\/##
+
+
+#--------------------------------#
+#     Spearman Correlation       #
+#--------------------------------#
+
+library(Hmisc)
+
+sink ("spearman_correlations.txt")       ##/\open sink/\##
+# included in LR BE
+cat("\n","----- Spearman rank order correlation and significance therein between returns and color -----","\n")
+rcorr(orders.train$returnShipment, orders.train$color, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and delivery time -----","\n")
+rcorr(orders.train$returnShipment, orders.train$timeToDeliver, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and salutation -----","\n")
+rcorr(orders.train$returnShipment, orders.train$salutation, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and account age -----","\n")
+rcorr(orders.train$returnShipment, orders.train$accountAge, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and Christmas time -----","\n")
+rcorr(orders.train$returnShipment, orders.train$holidayFlag, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and sizing in letters -----","\n")
+rcorr(orders.train$returnShipment, orders.train$LetterSize, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and childrens' sizes -----","\n")
+rcorr(orders.train$returnShipment, orders.train$ChildSize, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and size range for shoes and dresses -----","\n")
+rcorr(orders.train$returnShipment, orders.train$ShoeDress, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and high risk sizes -----","\n")
+rcorr(orders.train$returnShipment, orders.train$sizeHighRisk, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and low risk sizes -----","\n")
+rcorr(orders.train$returnShipment, orders.train$sizeLowRisk, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and difference between transaction price and mean -----","\n")
+rcorr(orders.train$returnShipment, orders.train$difFromMeanPrice, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and price -----","\n")
+rcorr(orders.train$returnShipment, orders.train$price, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and basket size proxy -----","\n")
+rcorr(orders.train$returnShipment, orders.train$numItemsInOrder, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and total number of customer orders -----","\n")
+rcorr(orders.train$returnShipment, orders.train$numCustOrders, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and return frequency by customer -----","\n")
+rcorr(orders.train$returnShipment, orders.train$numCustReturns, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and indicator for a high risk customer -----","\n")
+rcorr(orders.train$returnShipment, orders.train$custRiskFlag, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and total number of returns for an item -----","\n")
+rcorr(orders.train$returnShipment, orders.train$numItemReturns, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and total number of orders for that item -----","\n")
+rcorr(orders.train$returnShipment, orders.train$numItemOrders, type="spearman")
+cat("\n","----- Spearman rank order correlation and significance therein between returns and the number of orders for that manufacturer -----","\n")
+rcorr(orders.train$returnShipment, orders.train$numManufOrders, type="spearman")
 sink()  						            ##\/close sink\/##
 
 
@@ -402,76 +433,56 @@ rcorr(orders.train$returnShipment, orders.train$Pants, type="pearson")
 rcorr(orders.train$returnShipment, orders.train$LetterSize, type="pearson")
 rcorr(orders.train$returnShipment, orders.train$state, type="pearson") # Not statistically significant
 
-
 cor(orders.train$returnShipment, orders.train$timeToDeliver)
 
-# Plot Histograms for all variables by class
-# will need to sub in our data names #
 
-pdf(file = "hist_plots.pdf", width = 11, height = 8.5)
-nm <- names(wine)[1:13]
-for (i in seq(along = nm)) {
-  hist.plot <- ggplot(wine,aes(x = eval(parse(text = paste("wine$", nm[i], sep=""))),
-                               fill=factor(class))) + geom_histogram(alpha = 0.5)+xlab(nm[i])
-  print(hist.plot)
-}
-dev.off()
-
-#-------------------------#
-# Density Plots by class  #
-#-------------------------#
-# includes a loop with output routed to a pdf file
-# will need to sub in our data names #
+#------------------------------#
+#  Histograms / Density Plots  #
+#------------------------------#
 pdf(file = "density_plots.pdf", width = 11, height = 8.5)
-nm <- names(orders.train)[1:55]
-for (i in seq(along = nm)) {
-  this.plot <- ggplot(orders.train,aes(x = eval(parse(text = paste("returnShipment$", nm[i], sep=""))),
-                               fill=factor(class))) + geom_density(alpha = 0.5)+xlab(nm[i])
-  print(this.plot)
-}
+dprice <- density(orders.train$price)
+plot (dprice, main="Kernel Density of Price", xlab="price")
+ddelivery <- density(orders.train$timeToDeliver)
+plot (ddelivery, main="Kernel Density of Price", xlab="Delivery Time")
+daage <- density(orders.train$accountAge)
+plot (daage, main="Kernel Density of Account Age", xlab="Account Age")
+ddifprice <- density(orders.train$difFromMeanPrice)
+plot (ddifprice, main="Kernel Density of Price Less Mean", xlab="Price Differential from Mean")
+dbasket <- density(orders.train$numItemsInOrder)
+plot (dbasket, main="Kernel Density of Basket Size Proxy", xlab="Basket Size")
+dcustord <- density(orders.train$numCustOrders)
+plot (dcustord, main="Kernel Density of Total Orders for Customer", xlab="Total Orders for Customer")
+
+
+HERE  
+
+
+dprice <- density(orders.train$price)
+plot (dprice, main="Kernel Density of Price", xlab="price")
+dprice <- density(orders.train$price)
+plot (dprice, main="Kernel Density of Price", xlab="price")
+dprice <- density(orders.train$price)
+plot (dprice, main="Kernel Density of Price", xlab="price")
+dprice <- density(orders.train$price)
+plot (dprice, main="Kernel Density of Price", xlab="price")
+dprice <- density(orders.train$price)
+plot (dprice, main="Kernel Density of Price", xlab="price")
+dprice <- density(orders.train$price)
+plot (dprice, main="Kernel Density of Price", xlab="price")
+dprice <- density(orders.train$price)
+plot (dprice, main="Kernel Density of Price", xlab="price")
+dprice <- density(orders.train$price)
+plot (dprice, main="Kernel Density of Price", xlab="price")
+dprice <- density(orders.train$price)
+plot (dprice, main="Kernel Density of Price", xlab="price")
+dprice <- density(orders.train$price)
+plot (dprice, main="Kernel Density of Price", xlab="price")
+
+
+
+
 dev.off()
 
-
-# NOT working
-pdf(file = "qplots_density.pdf", width = 11, height = 8.5)
-qplot(orders.train$price, data=orders.train, geom="density", fill=orders.train$returnShipment, alpha=I(.5),
-      main="price by return status", xlab="price",
-      ylab="Density")
-dev.off()
-
-
-#------------------------------------#
-# To illustrate clustering by class  #
-# XY Plot by class                   #
-#------------------------------------#
-# lattice plots for key explanatory variables
-# Shows X&Y relationship by class - Can use for EDA or after algorithm returns top vars
-# But I think this may help identify interaction effects
-library(lattice) # required for the xyplot() function
-
-plot(, )
-
-# this is just a template for integration #
-xyplot(numManufReturns ~ numCustReturns | returnShipment, 
-       data = orders.train,        
-       layout = c(6, 1),
-       aspect=1,
-       strip=function(...) strip.default(..., style=1),
-xlab = "Number of returns by Customer", 
-ylab = "Number of returns by Manufacturer")
-
-# Along same lines, we can look at scatterplots - need car library
-library(car)
-# The larger graphs with the overlay 
-# make the relationships a bit more visible
-# this is by class
-# boxes are too small; size adjustment?
-scatterplot(numManufReturns ~ numCustReturns | returnShipment, data=orders.train, boxplots=FALSE, 
-            span=0.75, col=gray(c(0,0.5,0.7)),id.n=0)
-
-# this is just X vs. Y.  We can adjust for any specific variable comparisons we want to look at
-scatterplot(numManufReturns ~ numCustReturns, data=orders.train, boxplots=FALSE, 
-            span=0.75,id.n=0)
 
 
 
@@ -540,22 +551,6 @@ corrgram(orders.numeric,main="Correlations",
          upper.panel=panel.correl,
          diag.panel=panel.density)
 dev.off()
-
-#------------------------------------------#
-# Conditioned XY Plots - to look in panels #
-#------------------------------------------#
-# this was a handy XYplot tool to look at the relationship between 2 variables, conditioned by other variables
-# this was borrowed from our diamonds data set program
-# showing the relationship between price and carat, while conditioning
-# on cut and channel provides a convenient view of the diamonds data
-# in addition, we jitter to show all points in the data frame
-xyplot(jitter(sqrtprice) ~ jitter(carat) | channel + cut, 
-       data = diamonds,
-       aspect = 1, 
-       layout = c(3, 2),
-       strip=function(...) strip.default(..., style=1),
-       xlab = "Size or Weight of Diamond (carats)", 
-       ylab = "Price")
 
 
 #------------------------------------------------#
