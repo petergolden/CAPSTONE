@@ -80,18 +80,30 @@ item.check <- summaryBy(manufacturerID ~ itemID, orders.train, FUN=c(min,max))
 item.check[-which(item.check$manufacturerID.min==item.check$manufacturerID.max),]
   # get full details on these itemIDs
 View(orders.train[which(orders.train$itemID==c(1627,1682,1696,2252)),])
-  #### How do we want to handle these??
+
+#### How do we want to handle these??
   # This affects 145 observations
   # It's not undheard of for two manufacturers to make the same item, 
   # but there are clearly errors as the items from the different manufacturers
   # are sometime not even in the same size range
   # There are not many and return frequency is not far off
-  # we could double check with a t-test or a binomial test on missing obs and compare to the confidence interval
+
+# Let's explore this data set a bit further, 
+# get the mean of the returns and number of returns out of the 145 obs
+X <- orders.train[which(orders.train$itemID==c(1627,1682,1696,2252)),]
+X
+mean(X$returnShipment) #.5034483
+sum(X$returnShipment) # 73
+
+# The following binomial test on these 'missing' obs show mean value of these; check if within the confidence interval for no bias
 binom.test(73, 145, p = .4824, alternative = c("two.sided"), conf.level = 0.95)
   # x= number of 'successes',n=number of trials, p = hypothesized prob of success, or that of return rate of our population
   # http://stat.ethz.ch/R-manual/R-patched/library/stats/html/binom.test.html
-  # Since true prob is in confidence interval, there is no bias and I concur to remove these obs.  JB.  
-remove(item.check)
+# t-test on equal means
+t.test(X$returnShipment, orders.train$returnShipment)
+# get a high p-value ( p-value = 0.6147) so we cannot reject null hypothesis of equal means
+# Since true prob is in confidence interval, there is no bias and I concur to remove these obs.  JB.  
+remove(item.check, X)
 
 # Customer checks- salutation, state, bday, and creation date should match across records
 # Steps similar to item check above
@@ -108,6 +120,51 @@ remove(cust.check)
 #     And Data Cleaning    #
 #--------------------------#
 
+# Let's see what we have
+summary(orders.train)
+# we see NA's in columns 3,11
+
+# Any bias in observations with missing data?
+# check missing delivery date
+missing3  <- orders.train[(is.na(orders.train$deliveryDate)),]
+head(missing3)
+summary(missing3) # 39419 obs
+sum(missing3$returnShipment) # 0 returns confirmed!
+
+# check missing date of birth
+missing11 <- orders.train[(is.na(orders.train$dateOfBirth)),]
+head(missing11)
+summary(missing11) # 48889 obs
+sum(missing11$returnShipment) # 23290 returns 
+mean(missing11$returnShipment) #0.4763853
+binom.test(23290, 48889, p = .4824, alternative = c("two.sided"), conf.level = 0.95) # p-value = 0.007791
+t.test(missing11$returnShipment, orders.train$returnShipment) # p-value = 0.01085
+# both results are outside confidence interval with significant p values 
+# reject null of equal means - so there is potential for a slight bias, 
+# but we do not have access to management to fix.  In real life we might investigate, 
+# but exact tests for data sets this large are too sensitive
+
+#NEED TO DEAL WITH COLOR = ? as well - run color mapping code below first
+
+missing5 <- orders.train[(is.na(orders.train$color)),] #143 obs
+sum(missing5$returnShipment) # 7 returns 
+mean(missing5$returnShipment) # 0.04895105
+binom.test(7, 143, p = .4824, alternative = c("two.sided"), conf.level = 0.95) # p-value < 2.2e-16
+t.test(missing5$returnShipment, orders.train$returnShipment) # p-value < 2.2e-16
+
+# Also look below for salutation - we called not reported as 'missing'
+missing10 <- orders.train[(is.na(orders.train$salutation)),] #351 obs
+sum(missing10$returnShipment) # 112 returns 
+mean(missing10$returnShipment) #0.3190883
+binom.test(112, 351, p = .4824, alternative = c("two.sided"), conf.level = 0.95) # p-value = 6.023e-10
+t.test(missing10$returnShipment, orders.train$returnShipment) # p-value = 2.016e-10
+
+remove(missing3, missing11, missing5, missing10, colorMap)
+
+
+#-----------------------------------------------#
+
+
 #Lets recode & impute prior to making further transformations on our variables
 
 # Recode ? to NA for color
@@ -117,7 +174,10 @@ orders.train$color[orders.train$color =="?"] <- NA
 # Recode "not reported" to NA for salutation
 orders.train$salutation[orders.train$salutation =="not reported"] <- NA
 
-#Rows with missing delivery dates we are assuming were not delivered, take them out
+# Rows with missing delivery dates we are assuming were not delivered (they all show as 0 returns!)
+# Since you can't return what was not even delivered to you yet...
+# We need to take these out - because these could affect parameter estimates
+# At the same time, we apply a 0% return rate to these for the interim
 orders.train <- orders.train[!(is.na(orders.train$deliveryDate)),]
 
 #Mice is unable to impute on entire dataset (too many observations, becomes singular)

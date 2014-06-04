@@ -25,7 +25,6 @@ library(tseries)
 library(forecast)
 library(MMST)
 library(ggplot2)
-library(lattice) # required for the xyplot() function
 library(car)
 library(RWeka)
 library(corrgram)
@@ -92,23 +91,11 @@ describeBy(orders.train, group=orders.train$returnShipment, mat=FALSE, type=3, d
 
 # XY Plots
 # quick X vs Y plot
-plot(orders.sample, cex=0.1)
+plot(orders.train, cex=0.1)
 
 
-
-#--------------------------#
-# DEAL WITH MISSING VALUES #
-#--------------------------#
-
-# Not sure who added this section (JB?), but it's not working for me (KT)
-# It was JB.  Maybe too much data?  Pete will pick this up.
-
-# using mi package - get visual plot of missing obs
-pdf(file = "missing_obs_plots.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
-missing.pattern.plot(orders.train, gray.scale = TRUE)
-dev.off()										##\/close pdf\/##
-
-# check how many observations for each variable have missing values
+# check how many observations for each variable have missing values 
+# Note: summary function does this too...
 sum(is.na(orders.train$variable_names))
 
 
@@ -440,6 +427,7 @@ cor(orders.train$returnShipment, orders.train$timeToDeliver)
 #  Histograms / Density Plots  #
 #------------------------------#
 pdf(file = "density_plots.pdf", width = 11, height = 8.5)
+
 dprice <- density(orders.train$price)
 plot (dprice, main="Kernel Density of Price", xlab="price")
 ddelivery <- density(orders.train$timeToDeliver)
@@ -454,7 +442,7 @@ dcustord <- density(orders.train$numCustOrders)
 plot (dcustord, main="Kernel Density of Total Orders for Customer", xlab="Total Orders for Customer")
 
 
-HERE  
+# Left off HERE  
 
 
 dprice <- density(orders.train$price)
@@ -477,9 +465,6 @@ dprice <- density(orders.train$price)
 plot (dprice, main="Kernel Density of Price", xlab="price")
 dprice <- density(orders.train$price)
 plot (dprice, main="Kernel Density of Price", xlab="price")
-
-
-
 
 dev.off()
 
