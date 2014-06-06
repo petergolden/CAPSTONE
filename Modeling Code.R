@@ -218,6 +218,12 @@ dev.off()
 
 str(predict.test.logistic) 
 
+# Eliminated variables were: 
+# state + bdayFlag + Pants + itemRiskFlag + numManufReturns + manufRiskFlag,
+# Also note, many variables we created were specifcally designed to be included in the calculations
+# of other variables, and would have no benefit on a standalone basis.  
+# These include variables such as custPriceMin or custPriceMax.
+
 ###################################################
 #-------------------------------------------------#
 #                  FINAL MODEL                    #

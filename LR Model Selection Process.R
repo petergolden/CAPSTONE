@@ -1,9 +1,10 @@
+#-----------------------------------------------#
+# File for Logistic Regression MODELING PROCESS #
+#-----------------------------------------------#
+
 # Add Libraries
 library(ROCR)
 library(caret)
-
-
-# Models and ML Algorithms
 
 
 load("imputedOrdersPostTransformation.rdata")
@@ -11,7 +12,21 @@ summary(orders.train)
 
 #eliminate cases where timeToDeliver is NA
 orders.train <- orders.train[complete.cases(orders.train[,17]),]
+# Oops, forgot to impute custAge NAs - let's see if it's even necessary to backtrack... 
+orders.train <- orders.train[complete.cases(orders.train[,19]),]
+
 summary(orders.train)
+
+# We created a lot of variables, many of which were used as intermediate steps to creating other variables.  
+# The full model excludes those variables created for intermediate steps
+# Given Variables excluded from the full model were:
+  # customerID, orderDate, itemID, manufacturerID, orderItemID, deliveryDate, size (just too large unchanged)
+  # dateOfBirth, creationDate, and orderID
+# Created variables that we excluded were:
+  # all size type markers, which we converted into binary variables
+  # All size mode markers, which were a start to an idea we didn't have time to pursue
+  # All interquartile and mean price values, which we simply used to calculate diffFromMean
+
 # For final prediction vector, Will need to manually add prediction of returnShipment=0 for incomplete shipments
 # FOR WORKING WITH orders.class.Imputed
 
@@ -36,96 +51,14 @@ remove(smp_size,train_ind)
 # To test against produced LR model, need to do after train / test split, or else seed will select different observations
 # Test shows zero difference in model coefficients - yay!
 # Only (minor) differences in Final Model from initial run will be due to seed having a different placement in train/test regimen
+# Therefore seed number is unimportant overall
 # train <- train[complete.cases(train[,17]),]
+# test <- test[complete.cases(test[,17]),] 
 # summary(train)
+# summary(test)
 
+remove(orders.train) # To clean workspace 
 
-remove(orders.train) # To clean workspace for 'hungry' algorithms
-
-### This is actually EDA, but wanted to do it after we had the train/test split.
-# ROC curves for individual variables, using logistic regression
-# HAD TO SPLIT FUNCTION DUE TO MEMORY ISSUES
-nm <- c("color","timeToDeliver","salutation",
-        "accountAge","holidayFlag","LetterSize",
-        "ChildSize","ShoeDress","difFromMeanPrice","price")
-models <- lapply(nm, function(x) {
-  glm(substitute(returnShipment ~ i, list(i = as.name(x))), 
-      family=binomial(link=logit), data = train)
-})
-
-pdf("EDA_UnivariateROC1.pdf",width=11,height=8.5)
-for (i in seq(along = nm)) {
-  predict.train.eda <- predict(models[[i]], train, type="response")
-  predict.test.eda <- predict(models[[i]], test, type="response")
-  
-  train.eda.pred <- prediction(predict.train.eda, train$returnShipment)
-  train.eda.roc <- performance(train.eda.pred, "tpr","fpr")
-  train.eda.auc <- (performance(train.eda.pred, "auc"))@y.values
-  
-  test.eda.pred <- prediction(predict.test.eda, test$returnShipment)
-  test.eda.roc <- performance(test.eda.pred, "tpr","fpr")
-  test.eda.auc <- (performance(test.eda.pred, "auc"))@y.values
-  
-  # plot the model ROC curves
-  plot(train.eda.roc, col = "darkgreen", 
-       main = paste("ROC Curves for Logistic Regression Model\n",nm[i]))
-  plot(test.eda.roc, col = "red",  add = TRUE)
-  abline(c(0,1))
-  # Draw a legend.
-  train.legend <- paste("Train: AUC=", round(train.eda.auc[[1]], digits=3))
-  test.legend <- paste("Test : AUC=", round(test.eda.auc[[1]], digits=3))
-  legend("bottomright", c(train.legend,test.legend), fill=c("darkgreen","red"))
-}
-dev.off()
-remove(i,models,nm,predict.test.eda,predict.train.eda,
-       test.eda.auc,test.eda.pred,test.eda.roc,test.legend,
-       train.eda.auc,train.eda.pred,train.eda.roc,train.legend)
-gc()
-memory.size()
-memory.limit()
-
-#------------SECOND SET OF ROC UNIVARIATE-----#
-
-nm <- c("numCustOrders",
-        "numCustReturns","custRiskFlag","numItemReturns","numItemOrders",
-        "numManufOrders", 
-        "sizeHighRisk", "sizeLowRisk", "numItemsInOrder")
-models <- lapply(nm, function(x) {
-  glm(substitute(returnShipment ~ i, list(i = as.name(x))), 
-      family=binomial(link=logit), data = train)
-})
-
-pdf("EDA_UnivariateROC2.pdf",width=11,height=8.5)
-for (i in seq(along = nm)) {
-  predict.train.eda <- predict(models[[i]], train, type="response")
-  predict.test.eda <- predict(models[[i]], test, type="response")
-  
-  train.eda.pred <- prediction(predict.train.eda, train$returnShipment)
-  train.eda.roc <- performance(train.eda.pred, "tpr","fpr")
-  train.eda.auc <- (performance(train.eda.pred, "auc"))@y.values
-  
-  test.eda.pred <- prediction(predict.test.eda, test$returnShipment)
-  test.eda.roc <- performance(test.eda.pred, "tpr","fpr")
-  test.eda.auc <- (performance(test.eda.pred, "auc"))@y.values
-  
-  # plot the model ROC curves
-  plot(train.eda.roc, col = "darkgreen", 
-       main = paste("ROC Curves for Logistic Regression Model\n",nm[i]))
-  plot(test.eda.roc, col = "red",  add = TRUE)
-  abline(c(0,1))
-  # Draw a legend.
-  train.legend <- paste("Train: AUC=", round(train.eda.auc[[1]], digits=3))
-  test.legend <- paste("Test : AUC=", round(test.eda.auc[[1]], digits=3))
-  legend("bottomright", c(train.legend,test.legend), fill=c("darkgreen","red"))
-}
-dev.off()
-
-remove(i,models,nm,predict.test.eda,predict.train.eda,
-       test.eda.auc,test.eda.pred,test.eda.roc,test.legend,
-       train.eda.auc,train.eda.pred,train.eda.roc,train.legend)
-gc()
-memory.size()
-memory.limit()
 
 #-------------------------------------------#
 #             Logistic Regression           #
@@ -188,7 +121,7 @@ str(predict.test.logistic)
 # CustomerAge has some NA's - need to check impute for this variable
 returns.full.lr <- glm(returnShipment ~ color + timeToDeliver 
                        + salutation + state
-                       + accountAge 
+                       + accountAge + customerAge
                        + holidayFlag + bdayFlag 
                        + LetterSize + Pants + ChildSize + ShoeDress + sizeHighRisk + sizeLowRisk
                        + difFromMeanPrice + price  
@@ -258,6 +191,12 @@ dev.off()
 
 str(predict.test.logistic) 
 
+# Eliminated variables were: 
+# state + bdayFlag + Pants + itemRiskFlag + numManufReturns + manufRiskFlag,
+# Also note, many variables we created were specifcally designed to be included in the calculations
+# of other variables, and would have no benefit on a standalone basis.  
+# These include variables such as custPriceMin or custPriceMax.
+
 ###################################################
 #-------------------------------------------------#
 #                  FINAL MODEL                    #
@@ -272,6 +211,15 @@ BE.LR.Model <- glm(formula = returnShipment ~ color + timeToDeliver + salutation
                      numCustOrders + numCustReturns + custRiskFlag + numItemReturns + 
                      numItemOrders + numManufOrders, family = binomial(link = logit), 
                    data = train)
+
+# WITH customerAge replacing sizeHighRisk - VERY LITTLE DIFFERENCE IN RESULTS
+BE.LR.Model <- glm(formula = returnShipment ~ color + timeToDeliver + salutation + customerAge + 
+                     accountAge + holidayFlag + LetterSize + ChildSize + ShoeDress + 
+                     sizeLowRisk + difFromMeanPrice + price + numItemsInOrder + 
+                     numCustOrders + numCustReturns + custRiskFlag + numItemReturns + 
+                     numItemOrders + numManufOrders, family = binomial(link = logit), 
+                   data = train)
+
 
 summary(BE.LR.Model)
 
@@ -289,7 +237,7 @@ test.logistic.roc <- performance(test.logistic.pred, "tpr","fpr")
 test.logistic.auc <- (performance(test.logistic.pred, "auc"))@y.values
 
 # plot the model ROC curves
-pdf(file = "BE_LR_Model_ROC.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
+pdf(file = "BE_LR_Model_ROC2.pdf", width = 11, height = 8.5)  ##/\open pdf/\##
 
 plot(train.logistic.roc, col = "darkgreen", main = "ROC Curves for Logistic Regression Model")
 plot(test.logistic.roc, col = "red",  add = TRUE)
@@ -401,4 +349,9 @@ remove(predict.test.logistic, predict.train.logistic, predictions, returns.lr,
        test.legend,train.legend, LRactuals, train.lift.LR, test.lift.LR, 
        BE.LR.Model)
 # to remove later if helpful: test.logistic.pred, test.logistic.pred, test.logistic.roc
+
+
+gc()
+memory.size()
+memory.limit()
 

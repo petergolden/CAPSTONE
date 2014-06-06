@@ -253,6 +253,8 @@ orders.train$timeToDeliver <- ifelse(orders.train$timeToDeliver<0,NA,orders.trai
 orders.train$customerAge <- ifelse(orders.train$customerAge<0,NA,orders.train$customerAge)
 # age should also probably not be > 100 - what should we use for the cut-off?
 orders.train$customerAge <- ifelse(orders.train$customerAge>100,NA,orders.train$customerAge)
+
+
 # Recheck
 # summary(orders.train[15:17])
 

@@ -43,49 +43,61 @@ sample_ind <- sample(seq_len(nrow(orders.train)), size = 5000)
 orders.sample <- orders.train [sample_ind, ]
 str(orders.sample)
 pdf("BeanPlots2.pdf",width=8.5,height=11)
-beanplot(customerAge ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Customer Age Distribution", ylab = "Age in Years", xaxt="n")
-legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
-beanplot(accountAge ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Account Age Distribution", ylab = "Age in Years", xaxt="n")
-legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
-beanplot(timeToDeliver ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Delivery Time Distribution", ylab = "Time in Days", xaxt="n")
-legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
-beanplot(price ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Price Distribution", xaxt="n")
-legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+beanplot(customerAge ~ returnShipment, orders.sample, 
+         side = "b", col = list("yellow", "orange"), 
+         border = c("yellow2","darkorange"), 
+         main = "Customer Age Distribution", ylab = "Age in Years", xaxt="n")
+  legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+beanplot(accountAge ~ returnShipment, orders.sample, 
+         side = "b", col = list("yellow", "orange"), 
+         border = c("yellow2","darkorange"), 
+         main = "Account Age Distribution", ylab = "Age in Years", xaxt="n")
+  legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+beanplot(timeToDeliver ~ returnShipment, orders.sample, 
+         side = "b", col = list("yellow", "orange"), 
+         border = c("yellow2","darkorange"), 
+         main = "Delivery Time Distribution", ylab = "Time in Days", xaxt="n")
+  legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+beanplot(price ~ returnShipment, orders.sample, 
+         side = "b", col = list("yellow", "orange"), 
+         border = c("yellow2","darkorange"), 
+         main = "Price Distribution", xaxt="n")
+  legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(difFromMeanPrice ~ returnShipment, orders.sample, 
          side = "b", col = list("yellow", "orange"), 
          border = c("yellow2","darkorange"), 
          main = "Distribution of Diff From Mean Price", xaxt="n")
-legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+  legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(numItemsInOrder ~ returnShipment, orders.sample, 
          side = "b", col = list("yellow", "orange"), 
          border = c("yellow2","darkorange"), 
          main = "Distribution of Number of Items in Order", xaxt="n")
-legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+  legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(numManufOrders ~ returnShipment, orders.sample, 
          side = "b", col = list("yellow", "orange"), 
          border = c("yellow2","darkorange"), 
          main = "Distribution of Number of Times Manuf Was Ordered", xaxt="n")
-legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+  legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(numItemOrders ~ returnShipment, orders.sample, 
          side = "b", col = list("yellow", "orange"), 
          border = c("yellow2","darkorange"), 
          main = "Distribution of Number of Times Item Was Ordered", xaxt="n")
-legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+  legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(numCustOrders ~ returnShipment, orders.sample, 
          side = "b", col = list("yellow", "orange"), 
          border = c("yellow2","darkorange"), 
          main = "Distribution of Number of Customer Orders", xaxt="n")
-legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+  legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(numCustReturns ~ returnShipment, orders.sample, 
          side = "b", col = list("yellow", "orange"), 
          border = c("yellow2","darkorange"), 
          main = "Distribution of Return Frequency by Customer", xaxt="n")
-legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+  legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(numItemReturns ~ returnShipment, orders.sample, 
          side = "b", col = list("yellow", "orange"), 
          border = c("yellow2","darkorange"), 
          main = "Distribution of Return Frequency by Item", xaxt="n")
-legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+  legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 dev.off()
 #----------END BEAN PLOTS------#
 
@@ -140,7 +152,7 @@ dev.off()
 # Eliminated variables: state + customerAge + holidayFlag + bdayFlag + Pants + 
 #                       itemRiskFlag + numManufReturns + manufRiskFlag,
 
-sink ("t_tests.txt")       ##/\open sink/\##
+sink ("t_tests.txt")                                                           ##/\open sink/\##
 # simple t-tests for binary explanatory variables
 # independent 2-group t-test
 # t.test(y~x) # where y is numeric and x is a binary factor
@@ -168,8 +180,7 @@ t.test(numItemOrders~returnShipment, data=orders.train) # Highly statistically s
 t.test(numManufOrders~returnShipment, data=orders.train) # Highly statistically significant
 t.test(customerAge~returnShipment, data=orders.train) # Highly statistically significant
 t.test(numManufReturns~returnShipment, data=orders.train) # Highly statistically significant
-
-sink()    					            ##\/close sink\/##
+sink()    					                                                        ##\/close sink\/##
 
 #------------------------#
 #      K-S-tests 'D'     #
@@ -478,8 +489,6 @@ dprice <- density(orders.train$price)
 plot (dprice, main="Kernel Density of Price", xlab="price")
 
 dev.off()
-
-
 
 
 # Numeric fields for sample scatterplot
