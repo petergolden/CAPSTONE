@@ -44,17 +44,16 @@ remove(orders.train) # To clean workspace for 'hungry' algorithms
 
 ### This is actually EDA, but wanted to do it after we had the train/test split.
 # ROC curves for individual variables, using logistic regression
-nm <- c("color","timeToDeliver","salutation","state",
-        "accountAge","customerAge","holidayFlag","bdayFlag","LetterSize","Pants",
-        "ChildSize","ShoeDress","difFromMeanPrice","price","numCustOrders",
-        "numCustReturns","custRiskFlag","numItemReturns","numItemOrders",
-        "itemRiskFlag","numManufOrders","numManufReturns","manufRiskFlag")
+# HAD TO SPLIT FUNCTION DUE TO MEMORY ISSUES
+nm <- c("color","timeToDeliver","salutation",
+        "accountAge","holidayFlag","LetterSize",
+        "ChildSize","ShoeDress","difFromMeanPrice","price")
 models <- lapply(nm, function(x) {
   glm(substitute(returnShipment ~ i, list(i = as.name(x))), 
       family=binomial(link=logit), data = train)
 })
 
-pdf("EDA_UnivariateROC.pdf",width=11,height=8.5)
+pdf("EDA_UnivariateROC1.pdf",width=11,height=8.5)
 for (i in seq(along = nm)) {
   predict.train.eda <- predict(models[[i]], train, type="response")
   predict.test.eda <- predict(models[[i]], test, type="response")
@@ -82,7 +81,51 @@ remove(i,models,nm,predict.test.eda,predict.train.eda,
        test.eda.auc,test.eda.pred,test.eda.roc,test.legend,
        train.eda.auc,train.eda.pred,train.eda.roc,train.legend)
 gc()
+memory.size()
+memory.limit()
 
+#------------SECOND SET OF ROC UNIVARIATE-----#
+
+nm <- c("numCustOrders",
+        "numCustReturns","custRiskFlag","numItemReturns","numItemOrders",
+        "numManufOrders", 
+        "sizeHighRisk", "sizeLowRisk", "numItemsInOrder")
+models <- lapply(nm, function(x) {
+  glm(substitute(returnShipment ~ i, list(i = as.name(x))), 
+      family=binomial(link=logit), data = train)
+})
+
+pdf("EDA_UnivariateROC2.pdf",width=11,height=8.5)
+for (i in seq(along = nm)) {
+  predict.train.eda <- predict(models[[i]], train, type="response")
+  predict.test.eda <- predict(models[[i]], test, type="response")
+  
+  train.eda.pred <- prediction(predict.train.eda, train$returnShipment)
+  train.eda.roc <- performance(train.eda.pred, "tpr","fpr")
+  train.eda.auc <- (performance(train.eda.pred, "auc"))@y.values
+  
+  test.eda.pred <- prediction(predict.test.eda, test$returnShipment)
+  test.eda.roc <- performance(test.eda.pred, "tpr","fpr")
+  test.eda.auc <- (performance(test.eda.pred, "auc"))@y.values
+  
+  # plot the model ROC curves
+  plot(train.eda.roc, col = "darkgreen", 
+       main = paste("ROC Curves for Logistic Regression Model\n",nm[i]))
+  plot(test.eda.roc, col = "red",  add = TRUE)
+  abline(c(0,1))
+  # Draw a legend.
+  train.legend <- paste("Train: AUC=", round(train.eda.auc[[1]], digits=3))
+  test.legend <- paste("Test : AUC=", round(test.eda.auc[[1]], digits=3))
+  legend("bottomright", c(train.legend,test.legend), fill=c("darkgreen","red"))
+}
+dev.off()
+
+remove(i,models,nm,predict.test.eda,predict.train.eda,
+       test.eda.auc,test.eda.pred,test.eda.roc,test.legend,
+       train.eda.auc,train.eda.pred,train.eda.roc,train.legend)
+gc()
+memory.size()
+memory.limit()
 
 #-------------------------------------------#
 #             Logistic Regression           #

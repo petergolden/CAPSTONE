@@ -47,6 +47,15 @@ company <- ifelse(orders.train$salutation=='Company',1,0)
 family <- ifelse(orders.train$salutation=='Family',1,0)
 Mr <- ifelse(orders.train$salutation=='Mr',1,0)
 
+# Run t-tests on binary variables created from salutation since can't do on categorical vars
+sink ("t_test_salutation.txt")       ##/\open sink/\##
+t.test(returnShipment~company, data=orders.train) # statistically significant
+t.test(returnShipment~family, data=orders.train) # statistically significant
+t.test(returnShipment~Mr, data=orders.train) # statistically significant
+sink()          		            ##\/close sink\/##
+
+
+
 summary(company)
 summary(family)
 summary(Mr)
@@ -65,6 +74,25 @@ red <- ifelse(orders.train$color=='red',1,0)
 white <- ifelse(orders.train$color=='white',1,0)
 yellow <- ifelse(orders.train$color=='yellow',1,0)
 orange <- ifelse(orders.train$color=='orange',1,0)
+
+
+# Run t-tests on binary variables created from color since can't do on categorical vars
+sink ("t_test_colors.txt")       ##/\open sink/\##
+t.test(returnShipment~brown, data=orders.train) # statistically significant
+t.test(returnShipment~purple, data=orders.train) # statistically significant
+t.test(returnShipment~weird, data=orders.train) # statistically significant
+t.test(returnShipment~grey, data=orders.train) # statistically significant
+t.test(returnShipment~pink, data=orders.train) # statistically significant
+t.test(returnShipment~green, data=orders.train) # statistically significant
+t.test(returnShipment~blue, data=orders.train) # statistically significant
+t.test(returnShipment~black, data=orders.train) # statistically significant
+t.test(returnShipment~red, data=orders.train) # statistically significant
+t.test(returnShipment~white, data=orders.train) # statistically significant
+t.test(returnShipment~yellow, data=orders.train) # statistically significant
+t.test(returnShipment~orange, data=orders.train) # statistically significant
+sink()          		            ##\/close sink\/##
+
+
 
 sink ("z_score_ranges.txt")       ##/\open sink/\##
 summary(brown) 

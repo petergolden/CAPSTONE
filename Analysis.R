@@ -42,7 +42,7 @@ set.seed(498)
 sample_ind <- sample(seq_len(nrow(orders.train)), size = 5000)
 orders.sample <- orders.train [sample_ind, ]
 str(orders.sample)
-pdf("BeanPlots.pdf",width=8.5,height=11)
+pdf("BeanPlots2.pdf",width=8.5,height=11)
 beanplot(customerAge ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Customer Age Distribution", ylab = "Age in Years", xaxt="n")
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 beanplot(accountAge ~ returnShipment, orders.sample, side = "b", col = list("yellow", "orange"), border = c("yellow2","darkorange"), main = "Account Age Distribution", ylab = "Age in Years", xaxt="n")
@@ -75,6 +75,16 @@ beanplot(numCustOrders ~ returnShipment, orders.sample,
          side = "b", col = list("yellow", "orange"), 
          border = c("yellow2","darkorange"), 
          main = "Distribution of Number of Customer Orders", xaxt="n")
+legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+beanplot(numCustReturns ~ returnShipment, orders.sample, 
+         side = "b", col = list("yellow", "orange"), 
+         border = c("yellow2","darkorange"), 
+         main = "Distribution of Return Frequency by Customer", xaxt="n")
+legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
+beanplot(numItemReturns ~ returnShipment, orders.sample, 
+         side = "b", col = list("yellow", "orange"), 
+         border = c("yellow2","darkorange"), 
+         main = "Distribution of Return Frequency by Item", xaxt="n")
 legend("topleft", bty="n",c("Not Returned", "Returned"), fill = c("yellow", "orange"))
 dev.off()
 #----------END BEAN PLOTS------#
@@ -143,6 +153,7 @@ t.test(returnShipment~LetterSize, data=orders.train) # statistically significant
 t.test(returnShipment~Pants, data=orders.train) # not statistically significant @95% c.i.
 t.test(returnShipment~ChildSize, data=orders.train) # statistically significant
 t.test(returnShipment~ShoeDress, data=orders.train) # statistically significant
+
 
 # We look at continuous variables as well, to see how the means of each separate
 t.test(timeToDeliver~returnShipment, data=orders.train) # Statistically significant

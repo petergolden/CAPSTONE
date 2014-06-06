@@ -51,7 +51,7 @@ nm <- c("color","timeToDeliver","salutation","state",
   "accountAge","customerAge","holidayFlag","bdayFlag","LetterSize","Pants",
   "ChildSize","ShoeDress","difFromMeanPrice","price","numCustOrders",
   "numCustReturns","custRiskFlag","numItemReturns","numItemOrders",
-  "itemRiskFlag","numManufOrders","numManufReturns","manufRiskFlag")
+  "itemRiskFlag","numManufOrders","numManufReturns","manufRiskFlag", "sizeHighRisk", "sizeLowRisk", "numItemsInOrder")
 models <- lapply(nm, function(x) {
   glm(substitute(returnShipment ~ i, list(i = as.name(x))), 
       family=binomial(link=logit), data = train)
